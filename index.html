@@ -200,7 +200,7 @@ footer a:hover{color:var(--color-primary)}
 <div class="wrap">
 
   <!-- Server -->
-  <div class="server-row">
+  <div class="server-row" style="display:none">
     <input id="serverUrl" class="server-input" type="url"
       placeholder="https://your-app.up.railway.app" autocomplete="off"
       value="https://web-production-76b2f0.up.railway.app">
@@ -472,6 +472,8 @@ function resetUI(){
   setProgress(0,'—');
   $('progressCard').classList.remove('show');
 }
+// Auto-connect on load
+window.addEventListener('load', () => { checkServer(); });
 </script>
 </body>
 </html>
