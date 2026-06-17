@@ -4,16 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SilenceCut — Автомонтаж видео</title>
-<meta name="theme-color" content="#01696f" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0f0f0d" media="(prefers-color-scheme: dark)">
-<meta name="application-name" content="SilenceCut">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="SilenceCut">
-<meta name="description" content="Автоматически вырезает тишину из видео прямо в браузере">
-<meta name="mobile-web-app-capable" content="yes">
-<link rel="manifest" id="pwa-manifest">
-<link rel="apple-touch-icon" id="apple-touch-icon">
 <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700&display=swap" rel="stylesheet">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -452,42 +442,6 @@ a, button, [role="button"], input, select { transition: color var(--transition-i
 .how-num { min-width: 22px; height: 22px; border-radius: var(--radius-full); background: var(--color-primary-highlight); color: var(--color-primary); font-size: var(--text-xs); font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
 
 .footer { padding: var(--space-8) var(--space-6); text-align: center; font-size: var(--text-xs); color: var(--color-text-faint); border-top: 1px solid var(--color-divider); }
-
-/* ==================== PWA ==================== */
-.pwa-install-banner {
-  display: none; position: fixed; bottom: var(--space-5); left: 50%; transform: translateX(-50%);
-  z-index: 9999; max-width: 420px; width: calc(100% - var(--space-8));
-  background: var(--color-surface); border: 1px solid var(--color-border);
-  border-radius: var(--radius-xl); padding: var(--space-4) var(--space-5);
-  box-shadow: var(--shadow-lg);
-  align-items: center; gap: var(--space-4);
-  animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-@keyframes slideUp { from { opacity: 0; transform: translateX(-50%) translateY(20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
-.pwa-install-banner.visible { display: flex; }
-.pwa-install-icon { width: 44px; height: 44px; border-radius: var(--radius-lg); flex-shrink: 0; background: var(--color-primary-highlight); display: flex; align-items: center; justify-content: center; color: var(--color-primary); }
-.pwa-install-text { flex: 1; min-width: 0; }
-.pwa-install-text strong { display: block; font-size: var(--text-sm); font-weight: 700; }
-.pwa-install-text span { font-size: var(--text-xs); color: var(--color-text-muted); }
-.pwa-install-actions { display: flex; gap: var(--space-2); flex-shrink: 0; }
-.btn-pwa-install {
-  padding: var(--space-2) var(--space-4); font-size: var(--text-xs); font-weight: 700;
-  background: var(--color-primary); color: #fff; border-radius: var(--radius-md);
-  transition: background var(--transition-interactive);
-}
-.btn-pwa-install:hover { background: var(--color-primary-hover); }
-.btn-pwa-dismiss { padding: var(--space-2); color: var(--color-text-muted); border-radius: var(--radius-md); }
-.btn-pwa-dismiss:hover { color: var(--color-text); background: var(--color-surface-offset); }
-
-.pwa-status-badge {
-  display: inline-flex; align-items: center; gap: var(--space-2);
-  font-size: var(--text-xs); color: var(--color-success); font-weight: 600;
-  padding: var(--space-1) var(--space-3);
-  background: var(--color-success-highlight); border-radius: var(--radius-full);
-  opacity: 0; transition: opacity 0.3s ease;
-}
-.pwa-status-badge.visible { opacity: 1; }
-
 </style>
 </head>
 <body>
@@ -508,10 +462,6 @@ a, button, [role="button"], input, select { transition: color var(--transition-i
     <span class="logo-text">Silence<span>Cut</span></span>
   </a>
   <div class="header-actions">
-    <div class="pwa-status-badge" id="pwa-badge">
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-      Установлено
-    </div>
     <button class="btn-icon" data-theme-toggle aria-label="Переключить тему">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
     </button>
@@ -817,7 +767,7 @@ a, button, [role="button"], input, select { transition: color var(--transition-i
       </div>
       <div class="accordion-body" id="acc-python-body">
         <div class="accordion-content" style="font-size: var(--text-sm); color: var(--color-text-muted);">
-          <p style="margin-bottom: var(--space-3);">Для обработки больших файлов, сохранения оригинального кодека и полного контроля над форматом используйте скрипт на Python с <code style="font-family: var(--font-mono); background: var(--color-surface-offset); padding: 1px 6px; border-radius: 4px;">moviepy</code> и <code style="font-family: var(--font-mono); background: var(--color-surface-offset); padding: 1px 6px; border-radius: 4px;">librosa</code>:</p>
+          <p style="margin-bottom: var(--space-3);">Для обработки больших файлов, сохранения оригинального кодека �� полного контроля над форматом используйте скрипт на Python с <code style="font-family: var(--font-mono); background: var(--color-surface-offset); padding: 1px 6px; border-radius: 4px;">moviepy</code> и <code style="font-family: var(--font-mono); background: var(--color-surface-offset); padding: 1px 6px; border-radius: 4px;">librosa</code>:</p>
           <div class="install-block">
             <pre><span class="comment"># Установка зависимостей</span>
 <span class="cmd">pip install moviepy librosa soundfile numpy</span>
@@ -1453,206 +1403,6 @@ function formatTime(sec) {
   const s = Math.floor(sec % 60);
   return m > 0 ? `${m}м ${s.toString().padStart(2,'0')}с` : `${s}с`;
 }
-
-
-// ============================
-// PWA — MANIFEST (inline blob)
-// ============================
-(function() {
-  // Generate SVG icon as data URL
-  const svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
-    <rect width="512" height="512" rx="120" fill="#01696f"/>
-    <rect x="80" y="176" width="60" height="160" rx="30" fill="white"/>
-    <rect x="200" y="112" width="60" height="288" rx="30" fill="white"/>
-    <rect x="320" y="208" width="60" height="96" rx="30" fill="rgba(255,255,255,0.35)"/>
-    <line x1="356" y1="176" x2="452" y2="336" stroke="#ff6b6b" stroke-width="28" stroke-linecap="round"/>
-    <line x1="452" y1="176" x2="356" y2="336" stroke="#ff6b6b" stroke-width="28" stroke-linecap="round"/>
-  </svg>`;
-  const iconDataUrl = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgIcon)));
-
-  // Set apple touch icon
-  const appleIcon = document.getElementById('apple-touch-icon');
-  if (appleIcon) appleIcon.href = iconDataUrl;
-
-  // Build manifest object
-  const manifest = {
-    name: 'SilenceCut — Автомонтаж видео',
-    short_name: 'SilenceCut',
-    description: 'Автоматически вырезает тишину из видео прямо в браузере',
-    start_url: './',
-    display: 'standalone',
-    orientation: 'any',
-    background_color: '#0f0f0d',
-    theme_color: '#01696f',
-    categories: ['productivity', 'utilities'],
-    lang: 'ru',
-    icons: [
-      { src: iconDataUrl, sizes: '192x192', type: 'image/svg+xml', purpose: 'any maskable' },
-      { src: iconDataUrl, sizes: '512x512', type: 'image/svg+xml', purpose: 'any maskable' },
-    ],
-    shortcuts: [
-      {
-        name: 'Открыть редактор',
-        short_name: 'Редактор',
-        description: 'Быстро открыть SilenceCut',
-        url: './',
-        icons: [{ src: iconDataUrl, sizes: '96x96' }]
-      }
-    ]
-  };
-
-  const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
-  const manifestUrl = URL.createObjectURL(blob);
-  const linkEl = document.getElementById('pwa-manifest');
-  if (linkEl) linkEl.href = manifestUrl;
-})();
-
-// ============================
-// PWA — SERVICE WORKER (inline blob)
-// ============================
-(function() {
-  if (!('serviceWorker' in navigator)) return;
-
-  const CACHE_NAME = 'silencecut-v1';
-
-  const swCode = `
-const CACHE = '${`silencecut-v1`}';
-const ASSETS = ['./', location.href];
-
-self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(CACHE).then(c => {
-      try { return c.addAll(ASSETS); } catch(err) { return Promise.resolve(); }
-    }).then(() => self.skipWaiting())
-  );
-});
-
-self.addEventListener('activate', e => {
-  e.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-    ).then(() => self.clients.claim())
-  );
-});
-
-self.addEventListener('fetch', e => {
-  // Only handle same-origin or blob requests
-  if (!e.request.url.startsWith(self.location.origin) && !e.request.url.startsWith('blob:')) return;
-  e.respondWith(
-    caches.match(e.request).then(cached => {
-      if (cached) return cached;
-      return fetch(e.request).then(response => {
-        if (!response || response.status !== 200 || response.type === 'opaque') return response;
-        const clone = response.clone();
-        caches.open(CACHE).then(c => c.put(e.request, clone));
-        return response;
-      }).catch(() => caches.match('./'));
-    })
-  );
-});
-
-self.addEventListener('message', e => {
-  if (e.data && e.data.type === 'SKIP_WAITING') self.skipWaiting();
-});
-`;
-
-  const swBlob = new Blob([swCode], { type: 'application/javascript' });
-  const swUrl = URL.createObjectURL(swBlob);
-
-  navigator.serviceWorker.register(swUrl, { scope: './' })
-    .then(reg => {
-      console.log('[SW] Registered:', reg.scope);
-      // Show installed badge
-      if (reg.active) showPwaBadge();
-      reg.addEventListener('updatefound', () => {
-        const newWorker = reg.installing;
-        newWorker.addEventListener('statechange', () => {
-          if (newWorker.state === 'activated') showPwaBadge();
-        });
-      });
-    })
-    .catch(err => console.warn('[SW] Registration failed:', err));
-})();
-
-// ============================
-// PWA — INSTALL PROMPT
-// ============================
-let deferredPrompt = null;
-
-window.addEventListener('beforeinstallprompt', e => {
-  e.preventDefault();
-  deferredPrompt = e;
-  showInstallBanner();
-});
-
-window.addEventListener('appinstalled', () => {
-  hidePwaBanner();
-  showPwaBadge();
-  deferredPrompt = null;
-});
-
-function showInstallBanner() {
-  const banner = document.getElementById('pwa-install-banner');
-  if (banner) banner.classList.add('visible');
-}
-
-function hidePwaBanner() {
-  const banner = document.getElementById('pwa-install-banner');
-  if (banner) banner.classList.remove('visible');
-}
-
-function showPwaBadge() {
-  const badge = document.getElementById('pwa-badge');
-  if (badge) badge.classList.add('visible');
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  const btnInstall = document.getElementById('btn-pwa-install');
-  const btnDismiss = document.getElementById('btn-pwa-dismiss');
-
-  if (btnInstall) {
-    btnInstall.addEventListener('click', async () => {
-      if (!deferredPrompt) return;
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      deferredPrompt = null;
-      hidePwaBanner();
-      if (outcome === 'accepted') showPwaBadge();
-    });
-  }
-
-  if (btnDismiss) {
-    btnDismiss.addEventListener('click', hidePwaBanner);
-  }
-
-  // If already running as PWA (standalone)
-  if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
-    showPwaBadge();
-  }
-});
-
 </script>
-
-<!-- PWA Install Banner -->
-<div class="pwa-install-banner" id="pwa-install-banner" role="complementary" aria-label="Установить приложение">
-  <div class="pwa-install-icon">
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-      <polyline points="7 10 12 15 17 10"/>
-      <line x1="12" y1="15" x2="12" y2="3"/>
-    </svg>
-  </div>
-  <div class="pwa-install-text">
-    <strong>Установить SilenceCut</strong>
-    <span>Работает без интернета, как нативное приложение</span>
-  </div>
-  <div class="pwa-install-actions">
-    <button class="btn-pwa-install" id="btn-pwa-install" aria-label="Установить">Установить</button>
-    <button class="btn-pwa-dismiss" id="btn-pwa-dismiss" aria-label="Закрыть">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-    </button>
-  </div>
-</div>
-
 </body>
 </html>
