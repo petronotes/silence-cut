@@ -1,648 +1,1658 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" data-theme="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Video Silence Cutter</title>
-    
-    <!-- COOP/COEP для поддержки SharedArrayBuffer (требуется для FFmpeg.wasm) -->
-    <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin">
-    <meta http-equiv="Cross-Origin-Embedder-Policy" content="require-corp">
-    
-    <!-- iOS PWA -->
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SilenceCut — Автомонтаж видео</title>
+<meta name="theme-color" content="#01696f" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f0f0d" media="(prefers-color-scheme: dark)">
+<meta name="application-name" content="SilenceCut">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SilenceCut">
+<meta name="description" content="Автоматически вырезает тишину из видео прямо в браузере">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" id="pwa-manifest">
+<link rel="apple-touch-icon" id="apple-touch-icon">
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ==================== DESIGN TOKENS ==================== */
+:root, [data-theme="light"] {
+  --color-bg:             #f7f6f2;
+  --color-surface:        #f9f8f5;
+  --color-surface-2:      #fbfbf9;
+  --color-surface-offset: #f3f0ec;
+  --color-surface-offset-2: #edeae5;
+  --color-surface-dynamic: #e6e4df;
+  --color-divider:        #dcd9d5;
+  --color-border:         #d4d1ca;
+  --color-text:           #28251d;
+  --color-text-muted:     #7a7974;
+  --color-text-faint:     #bab9b4;
+  --color-primary:        #01696f;
+  --color-primary-hover:  #0c4e54;
+  --color-primary-active: #0f3638;
+  --color-primary-highlight: #cedcd8;
+  --color-success:        #437a22;
+  --color-success-hover:  #2e5c10;
+  --color-success-highlight: #d4dfcc;
+  --color-warning:        #964219;
+  --color-warning-highlight: #ddcfc6;
+  --color-error:          #a12c7b;
+  --color-error-hover:    #7d1e5e;
+  --color-error-highlight: #e0ced7;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-full: 9999px;
+  --transition-interactive: 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  --shadow-sm: 0 1px 2px oklch(0.2 0.01 80 / 0.06);
+  --shadow-md: 0 4px 12px oklch(0.2 0.01 80 / 0.08);
+  --shadow-lg: 0 12px 32px oklch(0.2 0.01 80 / 0.12);
+  --content-narrow: 640px;
+  --content-default: 960px;
+  --text-xs:   clamp(0.75rem,  0.7rem  + 0.25vw, 0.875rem);
+  --text-sm:   clamp(0.875rem, 0.8rem  + 0.35vw, 1rem);
+  --text-base: clamp(1rem,     0.95rem + 0.25vw, 1.125rem);
+  --text-lg:   clamp(1.125rem, 1rem    + 0.75vw, 1.5rem);
+  --text-xl:   clamp(1.5rem,   1.2rem  + 1.25vw, 2.25rem);
+  --text-2xl:  clamp(2rem,     1.2rem  + 2.5vw,  3.5rem);
+  --space-1:  0.25rem; --space-2:  0.5rem;  --space-3:  0.75rem; --space-4:  1rem;
+  --space-5:  1.25rem; --space-6:  1.5rem;  --space-8:  2rem;    --space-10: 2.5rem;
+  --space-12: 3rem;    --space-16: 4rem;    --space-20: 5rem;    --space-24: 6rem;
+  --font-display: 'Satoshi', 'Inter', sans-serif;
+  --font-body: 'Satoshi', 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+}
 
-    <style>
-        :root {
-            --bg-color: #171614;
-            --surface-color: #2a2927;
-            --accent-color: #4f98a3;
-            --text-color: #ffffff;
-            --text-muted: #9e9e9e;
-            --danger-color: #e57373;
-            --danger-bg: rgba(229, 115, 115, 0.2);
-            --font-family: 'Satoshi', 'Inter', sans-serif;
-            --border-radius: 12px;
-        }
+[data-theme="dark"] {
+  --color-bg:             #0f0f0d;
+  --color-surface:        #161614;
+  --color-surface-2:      #1c1c19;
+  --color-surface-offset: #1d1c1a;
+  --color-surface-offset-2: #222220;
+  --color-surface-dynamic: #2a2a27;
+  --color-divider:        #242422;
+  --color-border:         #333330;
+  --color-text:           #d4d3d0;
+  --color-text-muted:     #7a7976;
+  --color-text-faint:     #55544f;
+  --color-primary:        #4f98a3;
+  --color-primary-hover:  #227f8b;
+  --color-primary-active: #1a626b;
+  --color-primary-highlight: #1f3335;
+  --color-success:        #6daa45;
+  --color-success-hover:  #4d8f25;
+  --color-success-highlight: #1f3018;
+  --color-warning:        #bb653b;
+  --color-warning-highlight: #3a2a1e;
+  --color-error:          #d163a7;
+  --color-error-hover:    #b9478f;
+  --color-error-highlight: #2d1625;
+  --shadow-sm: 0 1px 2px oklch(0 0 0 / 0.25);
+  --shadow-md: 0 4px 12px oklch(0 0 0 / 0.35);
+  --shadow-lg: 0 12px 32px oklch(0 0 0 / 0.5);
+}
 
-        [data-theme="light"] {
-            --bg-color: #f5f5f5;
-            --surface-color: #ffffff;
-            --accent-color: #3d7a83;
-            --text-color: #171614;
-            --text-muted: #666666;
-            --danger-bg: rgba(229, 115, 115, 0.4);
-        }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --color-bg: #0f0f0d; --color-surface: #161614; --color-surface-2: #1c1c19;
+    --color-surface-offset: #1d1c1a; --color-surface-offset-2: #222220;
+    --color-surface-dynamic: #2a2a27; --color-divider: #242422; --color-border: #333330;
+    --color-text: #d4d3d0; --color-text-muted: #7a7976; --color-text-faint: #55544f;
+    --color-primary: #4f98a3; --color-primary-hover: #227f8b; --color-primary-active: #1a626b;
+    --color-primary-highlight: #1f3335; --color-success: #6daa45; --color-success-hover: #4d8f25;
+    --color-success-highlight: #1f3018; --color-warning: #bb653b; --color-warning-highlight: #3a2a1e;
+    --color-error: #d163a7; --color-error-hover: #b9478f; --color-error-highlight: #2d1625;
+  }
+}
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+/* ==================== BASE ==================== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-font-smoothing: antialiased; scroll-behavior: smooth; scroll-padding-top: var(--space-16); }
+body { min-height: 100dvh; line-height: 1.6; font-family: var(--font-body); font-size: var(--text-base); color: var(--color-text); background-color: var(--color-bg); }
+img, video, canvas, svg { display: block; max-width: 100%; }
+input, button, textarea, select { font: inherit; color: inherit; }
+h1, h2, h3, h4 { text-wrap: balance; line-height: 1.15; }
+p, li { text-wrap: pretty; }
+button { cursor: pointer; background: none; border: none; }
+a, button, [role="button"], input, select { transition: color var(--transition-interactive), background var(--transition-interactive), border-color var(--transition-interactive), box-shadow var(--transition-interactive); }
+:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; border-radius: var(--radius-sm); }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
 
-        body {
-            font-family: var(--font-family);
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            line-height: 1.5;
-            transition: background-color 0.3s, color 0.3s;
-        }
+/* ==================== LAYOUT ==================== */
+.app-container { display: flex; flex-direction: column; min-height: 100dvh; }
 
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 16px 20px;
-            background-color: var(--surface-color);
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
+.header {
+  position: sticky; top: 0; z-index: 100;
+  background: color-mix(in oklch, var(--color-bg) 85%, transparent);
+  backdrop-filter: blur(16px) saturate(1.4);
+  border-bottom: 1px solid var(--color-divider);
+  padding: var(--space-3) var(--space-6);
+  display: flex; align-items: center; justify-content: space-between;
+}
 
-        .theme-toggle {
-            background: none;
-            border: none;
-            color: var(--text-color);
-            font-size: 24px;
-            cursor: pointer;
-        }
+.logo { display: flex; align-items: center; gap: var(--space-3); text-decoration: none; color: var(--color-text); }
+.logo-text { font-size: var(--text-lg); font-weight: 700; letter-spacing: -0.02em; }
+.logo-text span { color: var(--color-primary); }
 
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-        }
+.header-actions { display: flex; align-items: center; gap: var(--space-3); }
 
-        .tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            overflow-x: auto;
-        }
+.btn-icon {
+  width: 36px; height: 36px; border-radius: var(--radius-md);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--color-text-muted); border: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+.btn-icon:hover { color: var(--color-text); background: var(--color-surface-offset); }
 
-        .tab-btn {
-            background-color: var(--surface-color);
-            color: var(--text-color);
-            border: none;
-            padding: 10px 16px;
-            border-radius: var(--border-radius);
-            cursor: pointer;
-            white-space: nowrap;
-            opacity: 0.7;
-        }
+.main { flex: 1; padding: var(--space-8) var(--space-6); max-width: var(--content-default); margin: 0 auto; width: 100%; }
 
-        .tab-btn.active {
-            background-color: var(--accent-color);
-            color: #fff;
-            opacity: 1;
-        }
+/* ==================== HERO ==================== */
+.hero { text-align: center; margin-bottom: var(--space-10); padding-top: var(--space-6); }
+.hero h1 { font-size: var(--text-2xl); font-weight: 700; letter-spacing: -0.03em; margin-bottom: var(--space-3); }
+.hero h1 span { color: var(--color-primary); }
+.hero p { font-size: var(--text-base); color: var(--color-text-muted); max-width: 52ch; margin: 0 auto; }
 
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
+/* ==================== PIPELINE STEPS ==================== */
+.pipeline { display: flex; align-items: center; justify-content: center; gap: var(--space-2); margin-bottom: var(--space-8); flex-wrap: wrap; }
+.pipeline-step {
+  display: flex; align-items: center; gap: var(--space-2);
+  font-size: var(--text-xs); font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;
+  color: var(--color-text-faint);
+  transition: color var(--transition-interactive);
+}
+.pipeline-step.active { color: var(--color-primary); }
+.pipeline-step.done { color: var(--color-success); }
+.step-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: currentColor; flex-shrink: 0;
+}
+.step-arrow { color: var(--color-text-faint); font-size: var(--text-xs); margin: 0 var(--space-1); }
 
-        .drop-zone {
-            border: 2px dashed var(--accent-color);
-            border-radius: var(--border-radius);
-            padding: 40px 20px;
-            text-align: center;
-            cursor: pointer;
-            background-color: var(--surface-color);
-            transition: background-color 0.3s;
-        }
+/* ==================== PANELS ==================== */
+.panel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  margin-bottom: var(--space-5);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--transition-interactive);
+}
+.panel:hover { box-shadow: var(--shadow-md); }
+.panel-title {
+  font-size: var(--text-lg); font-weight: 700; letter-spacing: -0.02em;
+  margin-bottom: var(--space-4); display: flex; align-items: center; gap: var(--space-3);
+}
+.panel-number {
+  width: 28px; height: 28px; border-radius: var(--radius-full);
+  background: var(--color-primary-highlight); color: var(--color-primary);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: var(--text-xs); font-weight: 700; flex-shrink: 0;
+}
 
-        .drop-zone:hover, .drop-zone.dragover {
-            background-color: rgba(79, 152, 163, 0.1);
-        }
+/* ==================== UPLOAD ZONE ==================== */
+.upload-zone {
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-12) var(--space-8);
+  text-align: center;
+  cursor: pointer;
+  transition: border-color var(--transition-interactive), background var(--transition-interactive);
+  position: relative;
+}
+.upload-zone:hover, .upload-zone.drag-over {
+  border-color: var(--color-primary);
+  background: var(--color-primary-highlight);
+}
+.upload-zone input[type="file"] {
+  position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+}
+.upload-icon { margin: 0 auto var(--space-4); color: var(--color-text-faint); }
+.upload-zone h3 { font-size: var(--text-base); font-weight: 600; margin-bottom: var(--space-2); }
+.upload-zone p { font-size: var(--text-sm); color: var(--color-text-muted); }
+.upload-zone .formats { margin-top: var(--space-3); display: flex; gap: var(--space-2); justify-content: center; flex-wrap: wrap; }
+.format-badge {
+  font-size: var(--text-xs); font-family: var(--font-mono);
+  background: var(--color-surface-offset); border: 1px solid var(--color-border);
+  border-radius: var(--radius-full); padding: 2px var(--space-3);
+  color: var(--color-text-muted); font-weight: 500;
+}
 
-        .slider-group { margin-bottom: 16px; }
-        .slider-group label { display: block; margin-bottom: 8px; font-size: 14px; }
-        .slider-group input[type="range"] { width: 100%; }
-        .slider-group .val { float: right; color: var(--accent-color); font-weight: bold; }
+/* ==================== FILE INFO ==================== */
+.file-info {
+  display: none; align-items: center; gap: var(--space-4);
+  padding: var(--space-4); background: var(--color-surface-2);
+  border: 1px solid var(--color-border); border-radius: var(--radius-lg);
+  margin-top: var(--space-4);
+}
+.file-info.visible { display: flex; }
+.file-icon { color: var(--color-primary); flex-shrink: 0; }
+.file-details { flex: 1; min-width: 0; }
+.file-name { font-size: var(--text-sm); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.file-meta { font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 2px; }
+.btn-clear { color: var(--color-text-muted); padding: var(--space-2); border-radius: var(--radius-md); }
+.btn-clear:hover { color: var(--color-error); background: var(--color-error-highlight); }
 
-        .btn {
-            background-color: var(--accent-color);
-            color: #fff;
-            border: none;
-            padding: 12px 24px;
-            border-radius: var(--border-radius);
-            cursor: pointer;
-            font-size: 16px;
-            width: 100%;
-            margin-top: 10px;
-        }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+/* ==================== SETTINGS GRID ==================== */
+.settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-5); }
+@media (max-width: 600px) { .settings-grid { grid-template-columns: 1fr; } }
 
-        .status {
-            margin-top: 10px;
-            padding: 10px;
-            border-radius: 8px;
-            background-color: var(--surface-color);
-            font-size: 14px;
-        }
+.form-field { display: flex; flex-direction: column; gap: var(--space-2); }
+.form-label { font-size: var(--text-sm); font-weight: 600; color: var(--color-text); display: flex; align-items: center; gap: var(--space-2); }
+.form-label .hint { font-weight: 400; color: var(--color-text-muted); font-size: var(--text-xs); }
+.form-input, .form-select {
+  width: 100%; padding: var(--space-3) var(--space-4);
+  background: var(--color-surface-2); border: 1px solid var(--color-border);
+  border-radius: var(--radius-md); font-size: var(--text-sm); color: var(--color-text);
+  transition: border-color var(--transition-interactive), box-shadow var(--transition-interactive);
+}
+.form-input:focus, .form-select:focus {
+  outline: none; border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--color-primary) 20%, transparent);
+}
+.form-input:hover, .form-select:hover { border-color: var(--color-text-faint); }
 
-        .error { color: var(--danger-color); }
+.range-wrapper { display: flex; flex-direction: column; gap: var(--space-2); }
+.range-with-value { display: flex; align-items: center; gap: var(--space-3); }
+.form-range { flex: 1; -webkit-appearance: none; appearance: none; height: 6px; border-radius: var(--radius-full); background: var(--color-surface-offset-2); outline: none; }
+.form-range::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%;
+  background: var(--color-primary); cursor: pointer; border: 2px solid var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  transition: background var(--transition-interactive), transform var(--transition-interactive);
+}
+.form-range::-webkit-slider-thumb:hover { background: var(--color-primary-hover); transform: scale(1.15); }
+.range-value {
+  min-width: 54px; text-align: center; font-size: var(--text-xs); font-family: var(--font-mono);
+  font-weight: 600; padding: var(--space-1) var(--space-3);
+  background: var(--color-surface-offset); border: 1px solid var(--color-border);
+  border-radius: var(--radius-full); color: var(--color-primary);
+}
 
-        #waveform-container {
-            position: relative;
-            width: 100%;
-            height: 150px;
-            background-color: var(--surface-color);
-            border-radius: var(--border-radius);
-            margin-top: 20px;
-            overflow: hidden;
-        }
+.field-desc { font-size: var(--text-xs); color: var(--color-text-muted); line-height: 1.5; }
 
-        canvas { display: block; width: 100%; height: 100%; }
-        
-        #tooltip {
-            position: absolute;
-            background: rgba(0,0,0,0.8);
-            color: #fff;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            pointer-events: none;
-            display: none;
-        }
-        
-        .progress-bar {
-            height: 6px;
-            background: var(--surface-color);
-            border-radius: 3px;
-            margin-top: 10px;
-            overflow: hidden;
-        }
-        
-        .progress-fill {
-            height: 100%;
-            background: var(--accent-color);
-            width: 0%;
-            transition: width 0.3s;
-        }
-    </style>
+/* ==================== TOGGLE ==================== */
+.toggle-field { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); }
+.toggle-label { display: flex; flex-direction: column; gap: 2px; }
+.toggle-label span { font-size: var(--text-sm); font-weight: 600; }
+.toggle-label small { font-size: var(--text-xs); color: var(--color-text-muted); }
+.toggle {
+  position: relative; width: 44px; height: 24px; flex-shrink: 0;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+.toggle-track {
+  position: absolute; inset: 0; border-radius: var(--radius-full);
+  background: var(--color-surface-dynamic); border: 1px solid var(--color-border);
+  transition: background var(--transition-interactive), border-color var(--transition-interactive);
+}
+.toggle input:checked + .toggle-track { background: var(--color-primary); border-color: var(--color-primary); }
+.toggle-thumb {
+  position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%;
+  background: var(--color-text); transition: left var(--transition-interactive), background var(--transition-interactive);
+  pointer-events: none;
+}
+.toggle input:checked ~ .toggle-thumb { left: 23px; background: #fff; }
+
+/* ==================== WAVEFORM ==================== */
+.waveform-container {
+  display: none; flex-direction: column; gap: var(--space-3); margin-top: var(--space-4);
+  padding: var(--space-4); background: var(--color-surface-2); border: 1px solid var(--color-border); border-radius: var(--radius-lg);
+}
+.waveform-container.visible { display: flex; }
+.waveform-label { font-size: var(--text-xs); font-weight: 600; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.waveform-canvas { width: 100%; height: 80px; border-radius: var(--radius-md); background: var(--color-bg); }
+.waveform-legend { display: flex; gap: var(--space-6); }
+.legend-item { display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-xs); color: var(--color-text-muted); }
+.legend-dot { width: 8px; height: 8px; border-radius: 2px; }
+
+/* ==================== PROCESS BUTTON ==================== */
+.btn-primary {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-3);
+  padding: var(--space-4) var(--space-8); font-size: var(--text-base); font-weight: 700;
+  background: var(--color-primary); color: #fff; border-radius: var(--radius-lg);
+  transition: background var(--transition-interactive), transform var(--transition-interactive), box-shadow var(--transition-interactive);
+  width: 100%; letter-spacing: -0.01em;
+}
+.btn-primary:hover:not(:disabled) { background: var(--color-primary-hover); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.btn-primary:active:not(:disabled) { background: var(--color-primary-active); transform: translateY(0); }
+.btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.btn-secondary {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-3);
+  padding: var(--space-3) var(--space-6); font-size: var(--text-sm); font-weight: 600;
+  background: var(--color-surface-offset); color: var(--color-text);
+  border: 1px solid var(--color-border); border-radius: var(--radius-md);
+  transition: background var(--transition-interactive);
+}
+.btn-secondary:hover { background: var(--color-surface-dynamic); }
+
+/* ==================== PROGRESS ==================== */
+.progress-panel {
+  display: none; flex-direction: column; gap: var(--space-4);
+  padding: var(--space-6); background: var(--color-surface);
+  border: 1px solid var(--color-border); border-radius: var(--radius-xl);
+  margin-bottom: var(--space-5); box-shadow: var(--shadow-sm);
+}
+.progress-panel.visible { display: flex; }
+.progress-header { display: flex; align-items: center; justify-content: space-between; }
+.progress-title { font-size: var(--text-base); font-weight: 700; }
+.progress-pct { font-size: var(--text-sm); font-family: var(--font-mono); font-weight: 600; color: var(--color-primary); }
+.progress-bar-track {
+  height: 6px; border-radius: var(--radius-full);
+  background: var(--color-surface-dynamic); overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%; border-radius: var(--radius-full);
+  background: linear-gradient(90deg in oklch, var(--color-primary), color-mix(in oklch, var(--color-primary) 70%, var(--color-success)));
+  transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  width: 0%;
+}
+.progress-log {
+  max-height: 160px; overflow-y: auto; display: flex; flex-direction: column; gap: var(--space-1);
+  padding: var(--space-3); background: var(--color-bg); border: 1px solid var(--color-divider); border-radius: var(--radius-md);
+  scrollbar-width: thin; scrollbar-color: var(--color-border) transparent;
+}
+.log-line { font-size: var(--text-xs); font-family: var(--font-mono); color: var(--color-text-muted); line-height: 1.7; }
+.log-line.success { color: var(--color-success); }
+.log-line.warn { color: var(--color-warning); }
+.log-line.error { color: var(--color-error); }
+.log-line .ts { color: var(--color-text-faint); margin-right: var(--space-2); }
+
+/* ==================== RESULT ==================== */
+.result-panel {
+  display: none; flex-direction: column; gap: var(--space-5);
+  padding: var(--space-6); background: var(--color-surface);
+  border: 1px solid var(--color-border); border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+}
+.result-panel.visible { display: flex; }
+.result-header { display: flex; align-items: center; gap: var(--space-3); }
+.success-badge {
+  width: 36px; height: 36px; border-radius: var(--radius-full);
+  background: var(--color-success-highlight); color: var(--color-success);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.result-title { font-size: var(--text-lg); font-weight: 700; letter-spacing: -0.02em; }
+.result-subtitle { font-size: var(--text-sm); color: var(--color-text-muted); }
+
+.stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-4); }
+@media (max-width: 500px) { .stats-grid { grid-template-columns: 1fr 1fr; } }
+.stat-card {
+  padding: var(--space-4); background: var(--color-surface-2);
+  border: 1px solid var(--color-border); border-radius: var(--radius-lg);
+  display: flex; flex-direction: column; gap: var(--space-1);
+}
+.stat-label { font-size: var(--text-xs); color: var(--color-text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+.stat-value { font-size: var(--text-xl); font-weight: 700; letter-spacing: -0.03em; font-family: var(--font-mono); color: var(--color-text); }
+.stat-unit { font-size: var(--text-xs); color: var(--color-text-muted); }
+.stat-card.highlight .stat-value { color: var(--color-success); }
+
+.video-preview { width: 100%; border-radius: var(--radius-lg); overflow: hidden; background: #000; }
+.video-preview video { width: 100%; max-height: 360px; display: block; }
+
+.result-actions { display: flex; gap: var(--space-3); flex-wrap: wrap; }
+.btn-download {
+  flex: 1; min-width: 200px; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-3);
+  padding: var(--space-4) var(--space-6); font-size: var(--text-sm); font-weight: 700;
+  background: var(--color-success); color: #fff; border-radius: var(--radius-lg);
+  transition: background var(--transition-interactive), transform var(--transition-interactive);
+}
+.btn-download:hover { background: var(--color-success-hover); transform: translateY(-1px); }
+.btn-restart { flex: 0; }
+
+/* ==================== NOTIFICATION ==================== */
+.notification {
+  display: none; align-items: flex-start; gap: var(--space-3);
+  padding: var(--space-4); border-radius: var(--radius-lg);
+  margin-bottom: var(--space-5); animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes slideDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+.notification.visible { display: flex; }
+.notification.error { background: var(--color-error-highlight); border: 1px solid color-mix(in oklch, var(--color-error) 30%, transparent); color: var(--color-error); }
+.notification.warn { background: var(--color-warning-highlight); border: 1px solid color-mix(in oklch, var(--color-warning) 30%, transparent); color: var(--color-warning); }
+.notif-icon { flex-shrink: 0; margin-top: 2px; }
+.notif-body { font-size: var(--text-sm); line-height: 1.5; }
+.notif-body strong { display: block; font-weight: 700; margin-bottom: 2px; }
+
+/* ==================== INFO ACCORDION ==================== */
+.info-section { margin-top: var(--space-8); }
+.accordion-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--space-4) 0; cursor: pointer; user-select: none;
+  border-top: 1px solid var(--color-divider); color: var(--color-text-muted);
+  font-size: var(--text-sm); font-weight: 600;
+}
+.accordion-header:hover { color: var(--color-text); }
+.accordion-chevron { transition: transform var(--transition-interactive); }
+.accordion-header.open .accordion-chevron { transform: rotate(180deg); }
+.accordion-body { overflow: hidden; max-height: 0; transition: max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
+.accordion-body.open { max-height: 800px; }
+.accordion-content { padding-bottom: var(--space-5); }
+
+.install-block {
+  background: var(--color-bg); border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg); padding: var(--space-4); margin: var(--space-3) 0;
+}
+.install-block pre {
+  font-family: var(--font-mono); font-size: var(--text-xs);
+  color: var(--color-text-muted); white-space: pre-wrap; word-break: break-word; line-height: 1.8;
+}
+.install-block pre .cmd { color: var(--color-primary); }
+.install-block pre .comment { color: var(--color-text-faint); }
+
+.how-list { display: flex; flex-direction: column; gap: var(--space-3); margin-top: var(--space-3); }
+.how-item { display: flex; gap: var(--space-3); align-items: flex-start; font-size: var(--text-sm); color: var(--color-text-muted); }
+.how-num { min-width: 22px; height: 22px; border-radius: var(--radius-full); background: var(--color-primary-highlight); color: var(--color-primary); font-size: var(--text-xs); font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+
+.footer { padding: var(--space-8) var(--space-6); text-align: center; font-size: var(--text-xs); color: var(--color-text-faint); border-top: 1px solid var(--color-divider); }
+
+/* ==================== PWA ==================== */
+.pwa-install-banner {
+  display: none; position: fixed; bottom: var(--space-5); left: 50%; transform: translateX(-50%);
+  z-index: 9999; max-width: 420px; width: calc(100% - var(--space-8));
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl); padding: var(--space-4) var(--space-5);
+  box-shadow: var(--shadow-lg);
+  align-items: center; gap: var(--space-4);
+  animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes slideUp { from { opacity: 0; transform: translateX(-50%) translateY(20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+.pwa-install-banner.visible { display: flex; }
+.pwa-install-icon { width: 44px; height: 44px; border-radius: var(--radius-lg); flex-shrink: 0; background: var(--color-primary-highlight); display: flex; align-items: center; justify-content: center; color: var(--color-primary); }
+.pwa-install-text { flex: 1; min-width: 0; }
+.pwa-install-text strong { display: block; font-size: var(--text-sm); font-weight: 700; }
+.pwa-install-text span { font-size: var(--text-xs); color: var(--color-text-muted); }
+.pwa-install-actions { display: flex; gap: var(--space-2); flex-shrink: 0; }
+.btn-pwa-install {
+  padding: var(--space-2) var(--space-4); font-size: var(--text-xs); font-weight: 700;
+  background: var(--color-primary); color: #fff; border-radius: var(--radius-md);
+  transition: background var(--transition-interactive);
+}
+.btn-pwa-install:hover { background: var(--color-primary-hover); }
+.btn-pwa-dismiss { padding: var(--space-2); color: var(--color-text-muted); border-radius: var(--radius-md); }
+.btn-pwa-dismiss:hover { color: var(--color-text); background: var(--color-surface-offset); }
+
+.pwa-status-badge {
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  font-size: var(--text-xs); color: var(--color-success); font-weight: 600;
+  padding: var(--space-1) var(--space-3);
+  background: var(--color-success-highlight); border-radius: var(--radius-full);
+  opacity: 0; transition: opacity 0.3s ease;
+}
+.pwa-status-badge.visible { opacity: 1; }
+
+</style>
 </head>
 <body>
+<div class="app-container">
 
-<header>
-    <h2>SilenceCut</h2>
-    <button class="theme-toggle" id="themeToggle">🌙</button>
+<!-- HEADER -->
+<header class="header">
+  <a href="#" class="logo">
+    <svg aria-label="SilenceCut logo" width="28" height="28" viewBox="0 0 28 28" fill="none">
+      <rect x="2" y="2" width="24" height="24" rx="7" fill="var(--color-primary)" opacity="0.15"/>
+      <rect x="2" y="2" width="24" height="24" rx="7" stroke="var(--color-primary)" stroke-width="1.5"/>
+      <rect x="6" y="10" width="3" height="8" rx="1.5" fill="var(--color-primary)"/>
+      <rect x="11" y="7" width="3" height="14" rx="1.5" fill="var(--color-primary)"/>
+      <rect x="16" y="12" width="3" height="4" rx="1.5" fill="var(--color-text-faint)"/>
+      <line x1="19.5" y1="10" x2="24.5" y2="18" stroke="var(--color-error)" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="24.5" y1="10" x2="19.5" y2="18" stroke="var(--color-error)" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Silence<span>Cut</span></span>
+  </a>
+  <div class="header-actions">
+    <div class="pwa-status-badge" id="pwa-badge">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+      Установлено
+    </div>
+    <button class="btn-icon" data-theme-toggle aria-label="Переключить тему">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </div>
 </header>
 
-<div class="container">
-    <div class="tabs">
-        <button class="tab-btn active" data-target="tab-upload">1. Загрузка</button>
-        <button class="tab-btn" data-target="tab-silence">2. Тишина</button>
-        <button class="tab-btn" data-target="tab-subs">3. Субтитры</button>
-        <button class="tab-btn" data-target="tab-export">4. Экспорт</button>
-    </div>
+<!-- MAIN -->
+<main class="main">
 
-    <!-- Вкладка 1: Загрузка -->
-    <div id="tab-upload" class="tab-content active">
-        <div class="drop-zone" id="dropZone">
-            <p>Перетащите видео сюда или нажмите для выбора</p>
-            <p class="text-muted" style="font-size: 12px; margin-top: 8px;">MP4, MOV, MKV, WebM</p>
-            <input type="file" id="fileInput" accept="video/mp4,video/quicktime,video/x-matroska,video/webm" style="display: none;">
-        </div>
-        <div id="fileMeta" class="status" style="display: none;"></div>
-        <video id="previewVideo" style="display: none;" playsinline></video>
-    </div>
+  <!-- HERO -->
+  <div class="hero">
+    <h1>Автоматически вырезает <span>тишину</span> из видео</h1>
+    <p>Загрузите видео, настройте параметры обнаружения тишины — и получите готовый монтаж прямо в браузере.</p>
+  </div>
 
-    <!-- Вкладка 2: Тишина -->
-    <div id="tab-silence" class="tab-content">
-        <div class="slider-group">
-            <label>Порог громкости (dB) <span class="val" id="val-threshold">-40</span></label>
-            <input type="range" id="threshold" min="-80" max="-20" step="1" value="-40">
-        </div>
-        <div class="slider-group">
-            <label>Мин. длина паузы (сек) <span class="val" id="val-minPause">1.0</span></label>
-            <input type="range" id="minPause" min="0.3" max="5.0" step="0.1" value="1.0">
-        </div>
-        <div class="slider-group">
-            <label>Отступ до слова (сек) <span class="val" id="val-padStart">0.15</span></label>
-            <input type="range" id="padBefore" min="0" max="1.0" step="0.05" value="0.15">
-        </div>
-        <div class="slider-group">
-            <label>Отступ после слова (сек) <span class="val" id="val-padEnd">0.15</span></label>
-            <input type="range" id="padAfter" min="0" max="1.0" step="0.05" value="0.15">
-        </div>
-        
-        <button class="btn" id="btnAnalyze">Анализировать аудио</button>
-        
-        <div id="statusAnalysis" class="status">Ожидание файла...</div>
-        
-        <div id="waveform-container">
-            <canvas id="waveformCanvas"></canvas>
-            <div id="tooltip"></div>
-        </div>
+  <!-- PIPELINE -->
+  <div class="pipeline" id="pipeline">
+    <div class="pipeline-step active" id="step-upload">
+      <div class="step-dot"></div>
+      Загрузка
     </div>
-
-    <!-- Вкладка 3: Субтитры -->
-    <div id="tab-subs" class="tab-content">
-        <p>Генерация субтитров через Whisper AI (работает локально).</p>
-        <div class="status">Первый запуск скачает модель (~244 МБ) в кэш браузера.</div>
-        <button class="btn" id="btnTranscribe">Создать субтитры</button>
-        
-        <div class="progress-bar"><div class="progress-fill" id="whisperProgress"></div></div>
-        <div id="statusWhisper" class="status">Ожидание...</div>
-        
-        <textarea id="subtitlesEditor" style="width: 100%; height: 150px; margin-top: 15px; background: var(--surface-color); color: var(--text-color); border: 1px solid var(--accent-color); border-radius: 8px; padding: 10px; display: none;"></textarea>
+    <div class="step-arrow">›</div>
+    <div class="pipeline-step" id="step-settings">
+      <div class="step-dot"></div>
+      Настройки
     </div>
+    <div class="step-arrow">›</div>
+    <div class="pipeline-step" id="step-process">
+      <div class="step-dot"></div>
+      Обработка
+    </div>
+    <div class="step-arrow">›</div>
+    <div class="pipeline-step" id="step-result">
+      <div class="step-dot"></div>
+      Результат
+    </div>
+  </div>
 
-    <!-- Вкладка 4: Экспорт -->
-    <div id="tab-export" class="tab-content">
-        <label style="display: block; margin-bottom: 15px;">
-            <input type="checkbox" id="burnSubs"> Вшить субтитры в видео (перекодирование)
+  <!-- NOTIFICATION -->
+  <div class="notification" id="notification" role="alert">
+    <div class="notif-icon" id="notif-icon"></div>
+    <div class="notif-body" id="notif-body"></div>
+  </div>
+
+  <!-- STEP 1: UPLOAD -->
+  <div class="panel" id="panel-upload">
+    <div class="panel-title">
+      <span class="panel-number">1</span>
+      Выберите видеофайл
+    </div>
+    <div class="upload-zone" id="dropzone">
+      <input type="file" id="video-input" accept="video/*" aria-label="Выберите видеофайл">
+      <svg class="upload-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="17 8 12 3 7 8"/>
+        <line x1="12" y1="3" x2="12" y2="15"/>
+      </svg>
+      <h3>Перетащите видео сюда или нажмите для выбора</h3>
+      <p>Обработка происходит полностью в браузере — файл никуда не отправляется</p>
+      <div class="formats">
+        <span class="format-badge">MP4</span>
+        <span class="format-badge">WebM</span>
+        <span class="format-badge">MOV</span>
+        <span class="format-badge">AVI</span>
+        <span class="format-badge">MKV</span>
+      </div>
+    </div>
+    <div class="file-info" id="file-info">
+      <div class="file-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="23 7 16 1 1 1 1 23 23 23 23 7"/>
+          <polyline points="16 1 16 7 23 7"/>
+        </svg>
+      </div>
+      <div class="file-details">
+        <div class="file-name" id="file-name-display">—</div>
+        <div class="file-meta" id="file-meta-display">—</div>
+      </div>
+      <button class="btn-clear" id="btn-clear" aria-label="Удалить файл">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <!-- Hidden video element for analysis -->
+    <video id="source-video" style="display:none" crossorigin="anonymous"></video>
+  </div>
+
+  <!-- STEP 2: SETTINGS -->
+  <div class="panel" id="panel-settings">
+    <div class="panel-title">
+      <span class="panel-number">2</span>
+      Параметры обнаружения тишины
+    </div>
+    <div class="settings-grid">
+      <!-- Threshold -->
+      <div class="form-field">
+        <label class="form-label">
+          Порог громкости
+          <span class="hint">dB</span>
         </label>
-        
-        <button class="btn" id="btnExport">Смонтировать</button>
-        
-        <div class="progress-bar"><div class="progress-fill" id="ffmpegProgress"></div></div>
-        <div id="statusExport" class="status">Ожидание...</div>
-        
-        <div id="downloadLinks" style="margin-top: 15px; display: flex; flex-direction: column; gap: 10px;"></div>
+        <div class="range-wrapper">
+          <div class="range-with-value">
+            <input type="range" class="form-range" id="threshold" min="-80" max="-10" step="1" value="-40">
+            <div class="range-value" id="threshold-val">-40 dB</div>
+          </div>
+        </div>
+        <p class="field-desc">Уровень ниже которого аудио считается тишиной. -40 dB рекомендуется для большинства видео.</p>
+      </div>
+
+      <!-- Min silence duration -->
+      <div class="form-field">
+        <label class="form-label">
+          Мин. длина тишины
+          <span class="hint">сек</span>
+        </label>
+        <div class="range-wrapper">
+          <div class="range-with-value">
+            <input type="range" class="form-range" id="min-silence" min="0.1" max="5" step="0.1" value="0.5">
+            <div class="range-value" id="min-silence-val">0.5 с</div>
+          </div>
+        </div>
+        <p class="field-desc">Минимальная продолжительность паузы, которая будет вырезана. Короче — и паузы в речи тоже удалятся.</p>
+      </div>
+
+      <!-- Padding before -->
+      <div class="form-field">
+        <label class="form-label">
+          Отступ до слова
+          <span class="hint">сек</span>
+        </label>
+        <div class="range-wrapper">
+          <div class="range-with-value">
+            <input type="range" class="form-range" id="pad-before" min="0" max="1" step="0.05" value="0.1">
+            <div class="range-value" id="pad-before-val">0.10 с</div>
+          </div>
+        </div>
+        <p class="field-desc">Оставить небольшую паузу перед началом звука, чтобы монтаж звучал естественно.</p>
+      </div>
+
+      <!-- Padding after -->
+      <div class="form-field">
+        <label class="form-label">
+          Отступ после слова
+          <span class="hint">сек</span>
+        </label>
+        <div class="range-wrapper">
+          <div class="range-with-value">
+            <input type="range" class="form-range" id="pad-after" min="0" max="1" step="0.05" value="0.1">
+            <div class="range-value" id="pad-after-val">0.10 с</div>
+          </div>
+        </div>
+        <p class="field-desc">Небольшой «хвост» после конца звука — предотвращает обрыв на полуслове.</p>
+      </div>
+
+      <!-- Max silence kept -->
+      <div class="form-field">
+        <label class="form-label">
+          Оставить тишины макс.
+          <span class="hint">сек</span>
+        </label>
+        <div class="range-wrapper">
+          <div class="range-with-value">
+            <input type="range" class="form-range" id="max-keep" min="0" max="3" step="0.1" value="0.5">
+            <div class="range-value" id="max-keep-val">0.5 с</div>
+          </div>
+        </div>
+        <p class="field-desc">Длинные паузы заменяются коротким промежутком вместо полного удаления — монтаж дышит.</p>
+      </div>
+
+      <!-- Smoothing -->
+      <div class="form-field">
+        <label class="form-label">
+          Сглаживание
+          <span class="hint">сек</span>
+        </label>
+        <div class="range-wrapper">
+          <div class="range-with-value">
+            <input type="range" class="form-range" id="smoothing" min="0" max="0.5" step="0.01" value="0.05">
+            <div class="range-value" id="smoothing-val">0.05 с</div>
+          </div>
+        </div>
+        <p class="field-desc">Объединяет соседние тихие участки. Убирает «мерцание» при словах с паузами внутри.</p>
+      </div>
     </div>
-</div>
 
-<script type="module">
-    // Инициализация PWA
-    const manifest = {
-        name: "Video Silence Cutter",
-        short_name: "SilenceCut",
-        display: "standalone",
-        orientation: "portrait",
-        theme_color: "#171614",
-        background_color: "#171614",
-        start_url: ".",
-        icons: [
-            { src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%234f98a3'/%3E%3C/svg%3E", sizes: "192x192", type: "image/svg+xml" }
-        ]
-    };
-    
-    const manifestBlob = new Blob([JSON.stringify(manifest)], {type: 'application/manifest+json'});
-    document.head.insertAdjacentHTML('beforeend', `<link rel="manifest" href="${URL.createObjectURL(manifestBlob)}">`);
+    <!-- Toggles -->
+    <div style="margin-top: var(--space-5); display: flex; flex-direction: column; gap: var(--space-4); border-top: 1px solid var(--color-divider); padding-top: var(--space-5);">
+      <div class="toggle-field">
+        <div class="toggle-label">
+          <span>Показать визуализацию аудио</span>
+          <small>Waveform + тихие участки перед обработкой</small>
+        </div>
+        <label class="toggle" for="show-wave">
+          <input type="checkbox" id="show-wave" checked>
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+    </div>
 
-    // Service Worker заглушка
-    const swCode = `
-        self.addEventListener('install', (e) => self.skipWaiting());
-        self.addEventListener('fetch', (e) => {
-            // Кэширование модели реализуется тут (Network First)
-        });
-    `;
-    const swBlob = new Blob([swCode], {type: 'application/javascript'});
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(console.error);
+    <!-- Waveform -->
+    <div class="waveform-container" id="waveform-container">
+      <div class="waveform-label">Аудиовизуализация — синим отмечен звук, серым — тишина (будет вырезана)</div>
+      <canvas class="waveform-canvas" id="waveform-canvas" width="900" height="80" aria-label="Визуализация аудио"></canvas>
+      <div class="waveform-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--color-primary)"></div> Звук</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--color-surface-dynamic)"></div> Тишина (вырезается)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--color-warning)"></div> Тишина (сохраняется, ≤ макс.)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROCESS BUTTON -->
+  <button class="btn-primary" id="btn-process" disabled>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <polygon points="5 3 19 12 5 21 5 3"/>
+    </svg>
+    Вырезать тишину и создать видео
+  </button>
+
+  <!-- PROGRESS -->
+  <div class="progress-panel" id="progress-panel">
+    <div class="progress-header">
+      <div class="progress-title" id="progress-title">Анализ аудио...</div>
+      <div class="progress-pct" id="progress-pct">0%</div>
+    </div>
+    <div class="progress-bar-track">
+      <div class="progress-bar-fill" id="progress-bar"></div>
+    </div>
+    <div class="progress-log" id="progress-log"></div>
+  </div>
+
+  <!-- RESULT -->
+  <div class="result-panel" id="result-panel">
+    <div class="result-header">
+      <div class="success-badge">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div>
+        <div class="result-title">Видео готово!</div>
+        <div class="result-subtitle" id="result-subtitle">Тишина успешно вырезана</div>
+      </div>
+    </div>
+
+    <div class="stats-grid" id="stats-grid"></div>
+
+    <div class="video-preview" id="video-preview"></div>
+
+    <div class="result-actions">
+      <button class="btn-download" id="btn-download">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Скачать обработанное видео
+      </button>
+      <button class="btn-secondary btn-restart" id="btn-restart">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="1 4 1 10 7 10"/>
+          <path d="M3.51 15a9 9 0 1 0 .49-4"/>
+        </svg>
+        Новое видео
+      </button>
+    </div>
+  </div>
+
+  <!-- INFO SECTION -->
+  <div class="info-section">
+    <div>
+      <div class="accordion-header" id="acc-how">
+        Как это работает?
+        <svg class="accordion-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="accordion-body" id="acc-how-body">
+        <div class="accordion-content">
+          <div class="how-list">
+            <div class="how-item"><span class="how-num">1</span><span><strong>Декодирование аудио</strong> — браузер декодирует звуковую дорожку через Web Audio API (AudioContext.decodeAudioData) без обращения к серверу.</span></div>
+            <div class="how-item"><span class="how-num">2</span><span><strong>Анализ RMS</strong> — видео разбивается на маленькие окна (~20 мс), для каждого вычисляется среднеквадратическое значение (RMS) громкости в дБ.</span></div>
+            <div class="how-item"><span class="how-num">3</span><span><strong>Маркировка участков</strong> — окна ниже порога помечаются как «тишина». Соседние тихие окна объединяются с учётом параметра «Сглаживание».</span></div>
+            <div class="how-item"><span class="how-num">4</span><span><strong>Монтаж через MediaRecorder</strong> — исходный &lt;video&gt; ускоренно проигрывается, активные сегменты захватываются через canvas + MediaRecorder API. Тишина пропускается.</span></div>
+            <div class="how-item"><span class="how-num">5</span><span><strong>Сборка WebM/MP4</strong> — результирующие чанки собираются в Blob, который можно скачать напрямую из браузера.</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="accordion-header" id="acc-limits">
+        Ограничения браузера
+        <svg class="accordion-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="accordion-body" id="acc-limits-body">
+        <div class="accordion-content" style="font-size: var(--text-sm); color: var(--color-text-muted); display: flex; flex-direction: column; gap: var(--space-3);">
+          <p>⚠️ <strong>Формат выхода — WebM</strong> (видео + аудио через MediaRecorder). Это ограничение браузерного API; перекодирование в MP4 без сервера невозможно.</p>
+          <p>⚠️ <strong>Большие файлы (>500 МБ)</strong> могут замедлять работу из-за ограничений оперативной памяти вкладки. Для профессиональных нужд рекомендуется использовать Python-скрипт ниже.</p>
+          <p>⚠️ <strong>Некоторые форматы кодеков</strong> (H.265/HEVC, некоторые MOV) могут не поддерживаться — зависит от браузера и ОС.</p>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="accordion-header" id="acc-python">
+        Python-скрипт (для продвинутых)
+        <svg class="accordion-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="accordion-body" id="acc-python-body">
+        <div class="accordion-content" style="font-size: var(--text-sm); color: var(--color-text-muted);">
+          <p style="margin-bottom: var(--space-3);">Для обработки больших файлов, сохранения оригинального кодека и полного контроля над форматом используйте скрипт на Python с <code style="font-family: var(--font-mono); background: var(--color-surface-offset); padding: 1px 6px; border-radius: 4px;">moviepy</code> и <code style="font-family: var(--font-mono); background: var(--color-surface-offset); padding: 1px 6px; border-radius: 4px;">librosa</code>:</p>
+          <div class="install-block">
+            <pre><span class="comment"># Установка зависимостей</span>
+<span class="cmd">pip install moviepy librosa soundfile numpy</span>
+
+<span class="comment"># Запуск</span>
+<span class="cmd">python silence_cut.py input.mp4 output.mp4 --threshold -40 --min-silence 0.5 --pad 0.1</span></pre>
+          </div>
+          <div class="install-block">
+            <pre><span class="comment">"""
+silence_cut.py — Вырезатель тишины
+Использование: python silence_cut.py input.mp4 output.mp4 [опции]
+"""</span>
+
+<span class="cmd">import argparse, numpy as np, librosa
+from moviepy.editor import VideoFileClip, concatenate_videoclips</span>
+
+def detect_silence(audio, sr, threshold_db, min_silence_sec, smooth_sec, pad_before, pad_after, max_keep):
+    frame_len = int(sr * 0.02)
+    hop_len = frame_len // 2
+    rms = librosa.feature.rms(y=audio, frame_length=frame_len, hop_length=hop_len)[0]
+    rms_db = 20 * np.log10(rms + 1e-9)
+    times = librosa.frames_to_time(np.arange(len(rms_db)), sr=sr, hop_length=hop_len)
+    is_silent = rms_db &lt; threshold_db
+
+    # Сглаживание
+    smooth_frames = int(smooth_sec / (hop_len / sr))
+    from scipy.ndimage import uniform_filter1d
+    is_silent = uniform_filter1d(is_silent.astype(float), size=smooth_frames) &gt; 0.5
+
+    # Группировка
+    segments, active, start = [], False, 0.0
+    for i, silent in enumerate(is_silent):
+        t = times[i]
+        if not silent and not active:
+            active = True; start = max(0, t - pad_before)
+        elif silent and active:
+            end = min(times[-1], t + pad_after)
+            segments.append((start, end)); active = False
+    if active:
+        segments.append((start, times[-1]))
+
+    # Объединение близких сегментов
+    merged = []
+    for s, e in segments:
+        if merged and s - merged[-1][1] &lt;= max_keep:
+            merged[-1] = (merged[-1][0], max(merged[-1][1], e))
+        else:
+            if merged and s - merged[-1][1] &gt; max_keep:
+                merged.append((merged[-1][1], merged[-1][1] + max_keep))
+            merged.append((s, e))
+    return merged
+
+def cut_silence(input_path, output_path, threshold=-40, min_silence=0.5,
+                smooth=0.05, pad_before=0.1, pad_after=0.1, max_keep=0.5):
+    video = VideoFileClip(input_path)
+    audio_arr, sr = librosa.load(input_path, sr=None, mono=True)
+    segments = detect_silence(audio_arr, sr, threshold, min_silence, smooth, pad_before, pad_after, max_keep)
+    clips = [video.subclip(s, e) for s, e in segments if e - s &gt; 0.05]
+    if not clips:
+        print("Ошибка: не найдено ни одного активного сегмента!")
+        return
+    final = concatenate_videoclips(clips)
+    final.write_videofile(output_path, codec="libx264", audio_codec="aac")
+    removed = video.duration - final.duration
+    print(f"Готово! Удалено {removed:.1f}с из {video.duration:.1f}с ({removed/video.duration*100:.1f}%)")
+
+if __name__ == "__main__":
+    p = argparse.ArgumentParser()
+    p.add_argument("input"); p.add_argument("output")
+    p.add_argument("--threshold", type=float, default=-40)
+    p.add_argument("--min-silence", type=float, default=0.5)
+    p.add_argument("--pad", type=float, default=0.1)
+    p.add_argument("--max-keep", type=float, default=0.5)
+    args = p.parse_args()
+    cut_silence(args.input, args.output, args.threshold, args.min_silence,
+                pad_before=args.pad, pad_after=args.pad, max_keep=args.max_keep)</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer class="footer">
+  SilenceCut — обработка происходит локально в браузере. Файлы не передаются на сервер.
+</footer>
+
+</div><!-- .app-container -->
+
+<script>
+// ============================
+// THEME TOGGLE
+// ============================
+(function(){
+  const t = document.querySelector('[data-theme-toggle]');
+  const r = document.documentElement;
+  let d = matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light';
+  r.setAttribute('data-theme', d);
+  const icons = {
+    dark: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>',
+    light: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>'
+  };
+  function updateToggle() { t.innerHTML = icons[d]; t.setAttribute('aria-label', d === 'dark' ? 'Светлая тема' : 'Тёмная тема'); }
+  updateToggle();
+  t && t.addEventListener('click', () => { d = d === 'dark' ? 'light' : 'dark'; r.setAttribute('data-theme', d); updateToggle(); });
+})();
+
+// ============================
+// RANGE INPUTS
+// ============================
+const ranges = [
+  { id: 'threshold',  valId: 'threshold-val',  fmt: v => `${v} dB` },
+  { id: 'min-silence', valId: 'min-silence-val', fmt: v => `${parseFloat(v).toFixed(1)} с` },
+  { id: 'pad-before',  valId: 'pad-before-val',  fmt: v => `${parseFloat(v).toFixed(2)} с` },
+  { id: 'pad-after',   valId: 'pad-after-val',   fmt: v => `${parseFloat(v).toFixed(2)} с` },
+  { id: 'max-keep',    valId: 'max-keep-val',    fmt: v => `${parseFloat(v).toFixed(1)} с` },
+  { id: 'smoothing',   valId: 'smoothing-val',   fmt: v => `${parseFloat(v).toFixed(2)} с` },
+];
+ranges.forEach(({id, valId, fmt}) => {
+  const el = document.getElementById(id);
+  const vEl = document.getElementById(valId);
+  el.addEventListener('input', () => { vEl.textContent = fmt(el.value); });
+});
+
+// ============================
+// FILE UPLOAD
+// ============================
+const videoInput = document.getElementById('video-input');
+const dropzone = document.getElementById('dropzone');
+const fileInfo = document.getElementById('file-info');
+const fileNameDisplay = document.getElementById('file-name-display');
+const fileMetaDisplay = document.getElementById('file-meta-display');
+const btnClear = document.getElementById('btn-clear');
+const btnProcess = document.getElementById('btn-process');
+const sourceVideo = document.getElementById('source-video');
+
+let currentFile = null;
+let audioBuffer = null;
+
+dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag-over'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+dropzone.addEventListener('drop', e => {
+  e.preventDefault(); dropzone.classList.remove('drag-over');
+  const f = e.dataTransfer?.files?.[0];
+  if (f && f.type.startsWith('video/')) handleFile(f);
+  else showNotif('error', 'Неверный формат', 'Пожалуйста, выберите видеофайл (MP4, WebM, MOV и др.)');
+});
+videoInput.addEventListener('change', () => { if (videoInput.files[0]) handleFile(videoInput.files[0]); });
+
+btnClear.addEventListener('click', clearFile);
+
+function handleFile(file) {
+  currentFile = file;
+  const url = URL.createObjectURL(file);
+  sourceVideo.src = url;
+  sourceVideo.load();
+  fileNameDisplay.textContent = file.name;
+  fileMetaDisplay.textContent = `${(file.size / 1024 / 1024).toFixed(1)} МБ`;
+  fileInfo.classList.add('visible');
+  btnProcess.disabled = false;
+  hideNotif();
+  setPipelineStep('settings');
+
+  // Decode audio for analysis
+  file.arrayBuffer().then(ab => {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    return ctx.decodeAudioData(ab);
+  }).then(buf => {
+    audioBuffer = buf;
+    fileMetaDisplay.textContent = `${(file.size / 1024 / 1024).toFixed(1)} МБ · ${buf.sampleRate} Hz · ${formatTime(buf.duration)}`;
+    if (document.getElementById('show-wave').checked) drawWaveform(buf);
+  }).catch(err => {
+    showNotif('warn', 'Аудиодорожка не найдена', 'Возможно, видео без звука. Обработка будет основана только на длительности.');
+  });
+}
+
+function clearFile() {
+  currentFile = null; audioBuffer = null;
+  videoInput.value = '';
+  sourceVideo.src = '';
+  fileInfo.classList.remove('visible');
+  btnProcess.disabled = true;
+  document.getElementById('waveform-container').classList.remove('visible');
+  hideNotif();
+  document.getElementById('result-panel').classList.remove('visible');
+  document.getElementById('progress-panel').classList.remove('visible');
+  setPipelineStep('upload');
+}
+
+// ============================
+// WAVEFORM
+// ============================
+document.getElementById('show-wave').addEventListener('change', function() {
+  if (this.checked && audioBuffer) drawWaveform(audioBuffer);
+  else document.getElementById('waveform-container').classList.remove('visible');
+});
+
+function drawWaveform(buf) {
+  const container = document.getElementById('waveform-container');
+  container.classList.add('visible');
+  const canvas = document.getElementById('waveform-canvas');
+  const ctx2d = canvas.getContext('2d');
+  const W = canvas.offsetWidth || 900; const H = 80;
+  canvas.width = W * window.devicePixelRatio; canvas.height = H * window.devicePixelRatio;
+  ctx2d.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+  const data = buf.getChannelData(0);
+  const numBars = Math.floor(W / 2);
+  const blockSize = Math.floor(data.length / numBars);
+  const threshold = parseFloat(document.getElementById('threshold').value);
+  const maxKeepSec = parseFloat(document.getElementById('max-keep').value);
+
+  // Compute RMS per bar
+  const rmsArr = [];
+  for (let i = 0; i < numBars; i++) {
+    let sum = 0;
+    for (let j = 0; j < blockSize; j++) sum += data[i * blockSize + j] ** 2;
+    rmsArr.push(Math.sqrt(sum / blockSize));
+  }
+  const maxRms = Math.max(...rmsArr, 1e-9);
+
+  // Detect silence regions (bar-level)
+  const silentBars = rmsArr.map(rms => {
+    const db = 20 * Math.log10(rms + 1e-9);
+    return db < threshold;
+  });
+
+  // Style
+  const cs = getComputedStyle(document.documentElement);
+  const colorActive = cs.getPropertyValue('--color-primary').trim();
+  const colorSilentCut = cs.getPropertyValue('--color-surface-dynamic').trim();
+  const colorSilentKeep = cs.getPropertyValue('--color-warning').trim();
+
+  // Compute silence run lengths to decide keep/cut
+  const barDuration = buf.duration / numBars;
+  let silenceRun = 0;
+  const silenceRunLen = silentBars.map((s, i) => {
+    if (s) silenceRun++;
+    else silenceRun = 0;
+    return silenceRun;
+  });
+
+  ctx2d.clearRect(0, 0, W, H);
+  for (let i = 0; i < numBars; i++) {
+    const barH = Math.max(2, (rmsArr[i] / maxRms) * (H * 0.85));
+    const x = i * 2;
+    let color;
+    if (!silentBars[i]) {
+      color = colorActive;
+    } else {
+      const runSec = silenceRunLen[i] * barDuration;
+      color = runSec <= maxKeepSec ? colorSilentKeep : colorSilentCut;
+    }
+    ctx2d.fillStyle = color;
+    ctx2d.beginPath();
+    ctx2d.roundRect(x, (H - barH) / 2, 1.5, barH, 1);
+    ctx2d.fill();
+  }
+}
+
+// Redraw waveform when params change
+['threshold','min-silence','max-keep','smoothing'].forEach(id => {
+  document.getElementById(id).addEventListener('input', () => {
+    if (audioBuffer && document.getElementById('show-wave').checked) drawWaveform(audioBuffer);
+  });
+});
+
+// ============================
+// PIPELINE STATE
+// ============================
+function setPipelineStep(step) {
+  const order = ['upload','settings','process','result'];
+  const idx = order.indexOf(step);
+  order.forEach((s, i) => {
+    const el = document.getElementById('step-' + s);
+    el.classList.remove('active','done');
+    if (i < idx) el.classList.add('done');
+    else if (i === idx) el.classList.add('active');
+  });
+}
+
+// ============================
+// NOTIFICATIONS
+// ============================
+function showNotif(type, title, msg) {
+  const el = document.getElementById('notification');
+  const iconEl = document.getElementById('notif-icon');
+  const bodyEl = document.getElementById('notif-body');
+  el.className = `notification visible ${type}`;
+  iconEl.innerHTML = type === 'error'
+    ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
+    : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+  bodyEl.innerHTML = `<strong>${title}</strong>${msg}`;
+}
+function hideNotif() { document.getElementById('notification').classList.remove('visible'); }
+
+// ============================
+// PROCESSING
+// ============================
+btnProcess.addEventListener('click', startProcessing);
+
+async function startProcessing() {
+  if (!currentFile) return;
+  if (!audioBuffer) {
+    showNotif('warn', 'Аудио не загружено', ' Дождитесь завершения анализа аудиодорожки.');
+    return;
+  }
+
+  setPipelineStep('process');
+  btnProcess.disabled = true;
+  document.getElementById('result-panel').classList.remove('visible');
+
+  const progressPanel = document.getElementById('progress-panel');
+  progressPanel.classList.add('visible');
+  progressPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  const log = document.getElementById('progress-log');
+  log.innerHTML = '';
+
+  function addLog(msg, cls = '') {
+    const ts = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const line = document.createElement('div');
+    line.className = `log-line ${cls}`;
+    line.innerHTML = `<span class="ts">${ts}</span>${msg}`;
+    log.appendChild(line);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  function setProgress(pct, title) {
+    document.getElementById('progress-bar').style.width = pct + '%';
+    document.getElementById('progress-pct').textContent = Math.round(pct) + '%';
+    if (title) document.getElementById('progress-title').textContent = title;
+  }
+
+  try {
+    const threshold = parseFloat(document.getElementById('threshold').value);
+    const minSilence = parseFloat(document.getElementById('min-silence').value);
+    const padBefore  = parseFloat(document.getElementById('pad-before').value);
+    const padAfter   = parseFloat(document.getElementById('pad-after').value);
+    const maxKeep    = parseFloat(document.getElementById('max-keep').value);
+    const smoothing  = parseFloat(document.getElementById('smoothing').value);
+
+    addLog('Начало анализа аудиодорожки...');
+    setProgress(5, 'Анализ аудио...');
+    await sleep(50);
+
+    // — Detect silence segments —
+    const sampleRate = audioBuffer.sampleRate;
+    const channelData = audioBuffer.getChannelData(0);
+    const frameLen = Math.floor(sampleRate * 0.02); // 20ms frames
+    const hopLen = Math.floor(frameLen / 2);
+    const totalDuration = audioBuffer.duration;
+
+    addLog(`Параметры: порог ${threshold} dB, мин. тишина ${minSilence}с, отступы ±${padBefore}/${padAfter}с`);
+    setProgress(15, 'Вычисление RMS...');
+    await sleep(50);
+
+    // Compute RMS per frame
+    const numFrames = Math.floor((channelData.length - frameLen) / hopLen);
+    const isLoud = new Uint8Array(numFrames);
+
+    for (let i = 0; i < numFrames; i++) {
+      let sum = 0;
+      const start = i * hopLen;
+      for (let j = 0; j < frameLen; j++) {
+        const val = channelData[start + j] || 0;
+        sum += val * val;
+      }
+      const rmsDb = 10 * Math.log10(sum / frameLen + 1e-12);
+      isLoud[i] = rmsDb >= threshold ? 1 : 0;
     }
 
-    // Состояние приложения
-    const state = {
-        file: null,
-        audioData: null, // Float32Array
-        sampleRate: 16000,
-        silenceSegments: [], // [{start, end}]
-        activeSegments: [],
-        subtitlesText: "",
-        duration: 0
-    };
+    setProgress(30, 'Сглаживание...');
+    await sleep(50);
 
-    // UI Логика
-    const themeToggle = document.getElementById('themeToggle');
-    themeToggle.addEventListener('click', () => {
-        const isLight = document.body.getAttribute('data-theme') === 'light';
-        document.body.setAttribute('data-theme', isLight ? 'dark' : 'light');
-        themeToggle.textContent = isLight ? '🌙' : '☀️';
-    });
-
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            e.target.classList.add('active');
-            document.getElementById(e.target.dataset.target).classList.add('active');
-        });
-    });
-
-    document.querySelectorAll('input[type="range"]').forEach(input => {
-        input.addEventListener('input', (e) => {
-            document.getElementById(`val-${e.target.id.replace('padBefore', 'padStart').replace('padAfter', 'padEnd')}`).textContent = e.target.value;
-        });
-    });
-
-    // Обработка файла
-    const dropZone = document.getElementById('dropZone');
-    const fileInput = document.getElementById('fileInput');
-
-    dropZone.addEventListener('click', () => fileInput.click());
-    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
-    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-    dropZone.addEventListener('drop', e => {
-        e.preventDefault();
-        dropZone.classList.remove('dragover');
-        if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
-    });
-    fileInput.addEventListener('change', e => {
-        if (e.target.files.length) handleFile(e.target.files[0]);
-    });
-
-    function handleFile(file) {
-        if (file.size > 100 * 1024 * 1024) {
-            alert("Предупреждение: файл больше 100 МБ. Обработка может занять много времени или вызвать нехватку памяти.");
-        }
-        state.file = file;
-        const meta = document.getElementById('fileMeta');
-        meta.style.display = 'block';
-        meta.textContent = `Загружен: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
-        
-        const vid = document.getElementById('previewVideo');
-        vid.src = URL.createObjectURL(file);
-        vid.onloadedmetadata = () => {
-            state.duration = vid.duration;
-            meta.textContent += ` | Длительность: ${state.duration.toFixed(1)} сек`;
-            document.getElementById('statusAnalysis').textContent = "Готов к анализу.";
-        };
+    // Apply smoothing
+    const smoothFrames = Math.max(1, Math.round(smoothing / (hopLen / sampleRate)));
+    const smoothed = new Uint8Array(numFrames);
+    for (let i = 0; i < numFrames; i++) {
+      let cnt = 0;
+      const from = Math.max(0, i - smoothFrames);
+      const to = Math.min(numFrames - 1, i + smoothFrames);
+      for (let k = from; k <= to; k++) cnt += isLoud[k];
+      smoothed[i] = cnt > (to - from + 1) / 2 ? 1 : 0;
     }
 
-    // Архитектура обработки аудио (Спецификация)
-    async function extractAudio() {
-        if (!state.file) return;
-        const vid = document.getElementById('previewVideo');
-        
-        const sampleRate = 16000;
-        const playbackRate = 4.0;
-        
-        // Предварительное выделение памяти согласно правилам (длительность / скорость * частота)
-        const expectedSamples = Math.ceil((state.duration / playbackRate) * sampleRate);
-        const buffer = new Float32Array(expectedSamples + 16000); // Запас
-        
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate });
-        const source = audioCtx.createMediaElementSource(vid);
-        const processor = audioCtx.createScriptProcessor(4096, 1, 1);
-        
-        source.connect(processor);
-        processor.connect(audioCtx.destination);
-        
-        vid.muted = false; // Важно: звук идет через граф
-        vid.volume = 0.001; 
-        vid.playbackRate = playbackRate;
-        vid.preservesPitch = false; // Отключаем vocoder для корректного сэмплирования
-        
-        let offset = 0;
-        
-        return new Promise((resolve, reject) => {
-            processor.onaudioprocess = (e) => {
-                const input = e.inputBuffer.getChannelData(0);
-                if (offset + input.length <= buffer.length) {
-                    buffer.set(input, offset);
-                    offset += input.length;
-                }
-            };
-            
-            vid.onended = () => {
-                source.disconnect();
-                processor.disconnect();
-                audioCtx.close();
-                state.audioData = buffer.slice(0, offset); // Отрезаем пустой хвост
-                resolve();
-            };
-            
-            vid.onerror = () => reject(new Error("Ошибка чтения аудио потока"));
-            vid.play().catch(reject);
-        });
+    addLog(`Сглаживание: окно ${smoothFrames} фреймов`);
+    setProgress(40, 'Определение сегментов...');
+    await sleep(50);
+
+    // Build loud segments with padding
+    const frameTime = hopLen / sampleRate;
+    const segments = [];
+    let inLoud = false;
+    let segStart = 0;
+
+    for (let i = 0; i < numFrames; i++) {
+      if (smoothed[i] && !inLoud) {
+        inLoud = true;
+        segStart = Math.max(0, i * frameTime - padBefore);
+      } else if (!smoothed[i] && inLoud) {
+        inLoud = false;
+        const segEnd = Math.min(totalDuration, i * frameTime + padAfter);
+        if (segEnd - segStart >= 0.05) segments.push([segStart, segEnd]);
+      }
+    }
+    if (inLoud) {
+      const segEnd = totalDuration;
+      segments.push([segStart, segEnd]);
     }
 
-    // Анализ тишины
-    document.getElementById('btnAnalyze').addEventListener('click', async () => {
-        if (!state.file) return alert("Загрузите файл");
-        
-        const status = document.getElementById('statusAnalysis');
-        status.textContent = "Извлечение аудио... (пожалуйста, не сворачивайте вкладку)";
-        
-        try {
-            if (!state.audioData) {
-                await extractAudio();
-            }
-            status.textContent = "Анализ тишины...";
-            
-            const thresholdDb = parseFloat(document.getElementById('threshold').value);
-            const minPause = parseFloat(document.getElementById('minPause').value);
-            const padBefore = parseFloat(document.getElementById('padBefore').value);
-            const padAfter = parseFloat(document.getElementById('padAfter').value);
-            
-            // Простейший алгоритм RMS
-            const sampleRate = 16000;
-            const thresholdLinear = Math.pow(10, thresholdDb / 20);
-            const windowSize = Math.floor(sampleRate * 0.05); // 50ms окна
-            
-            let isSilent = false;
-            let silenceStart = 0;
-            const rawSilences = [];
-            
-            // Внимание: аудио было собрано на скорости 4x, поэтому реальное время = индекс / sampleRate * 4
-            // Но мы используем отключенный preservesPitch, что значит, что сэмплов физически меньше.
-            const timeMultiplier = 4.0; 
-            
-            for (let i = 0; i < state.audioData.length; i += windowSize) {
-                let sum = 0;
-                for (let j = 0; j < windowSize && i + j < state.audioData.length; j++) {
-                    sum += state.audioData[i + j] * state.audioData[i + j];
-                }
-                const rms = Math.sqrt(sum / windowSize);
-                const currentTime = (i / sampleRate) * timeMultiplier;
-                
-                if (rms < thresholdLinear) {
-                    if (!isSilent) { isSilent = true; silenceStart = currentTime; }
-                } else {
-                    if (isSilent) {
-                        isSilent = false;
-                        if (currentTime - silenceStart >= minPause) {
-                            rawSilences.push({ start: silenceStart, end: currentTime });
-                        }
-                    }
-                }
-            }
-            
-            if (isSilent && (state.duration - silenceStart) >= minPause) {
-                rawSilences.push({ start: silenceStart, end: state.duration });
-            }
-            
-            // Применяем отступы
-            state.silenceSegments = rawSilences.map(s => {
-                return {
-                    start: Math.min(s.start + padAfter, state.duration),
-                    end: Math.max(s.end - padBefore, 0)
-                };
-            }).filter(s => (s.end - s.start) > 0.1);
-            
-            // Формируем активные сегменты (для FFmpeg)
-            state.activeSegments = [];
-            let lastEnd = 0;
-            state.silenceSegments.forEach(s => {
-                if (s.start > lastEnd) {
-                    state.activeSegments.push({ start: lastEnd, end: s.start });
-                }
-                lastEnd = s.end;
-            });
-            if (lastEnd < state.duration) {
-                state.activeSegments.push({ start: lastEnd, end: state.duration });
-            }
-            
-            status.textContent = `Готово. Найдено ${state.silenceSegments.length} сегментов тишины.`;
-            drawWaveform();
-            
-        } catch (err) {
-            status.textContent = "Ошибка: " + err.message;
-            status.classList.add('error');
-        }
-    });
-
-    // Отрисовка Canvas
-    function drawWaveform() {
-        const canvas = document.getElementById('waveformCanvas');
-        const ctx = canvas.getContext('2d');
-        const dpr = window.devicePixelRatio || 1;
-        
-        canvas.width = canvas.clientWidth * dpr;
-        canvas.height = canvas.clientHeight * dpr;
-        ctx.scale(dpr, dpr);
-        
-        ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
-        
-        // Волноформа (упрощенная)
-        ctx.fillStyle = '#666';
-        const step = Math.ceil(state.audioData.length / canvas.clientWidth);
-        for (let i = 0; i < canvas.clientWidth; i++) {
-            let min = 1.0, max = -1.0;
-            for (let j = 0; j < step; j++) {
-                const val = state.audioData[(i * step) + j];
-                if (val < min) min = val;
-                if (val > max) max = val;
-            }
-            const y = (1 + min) * (canvas.clientHeight / 2);
-            const h = Math.max(1, (max - min) * (canvas.clientHeight / 2));
-            ctx.fillRect(i, y, 1, h);
-        }
-        
-        // Подсветка тишины
-        ctx.fillStyle = 'rgba(229, 115, 115, 0.5)'; // danger-color semi-transparent
-        state.silenceSegments.forEach(s => {
-            const x = (s.start / state.duration) * canvas.clientWidth;
-            const w = ((s.end - s.start) / state.duration) * canvas.clientWidth;
-            ctx.fillRect(x, 0, w, canvas.clientHeight);
-        });
+    // Merge nearby segments (gap <= maxKeep → keep as-is, insert silence slot)
+    const merged = [];
+    for (const [s, e] of segments) {
+      if (merged.length === 0) { merged.push([s, e]); continue; }
+      const prev = merged[merged.length - 1];
+      const gap = s - prev[1];
+      if (gap <= maxKeep) {
+        // Merge — keep the gap (it's short enough)
+        merged[merged.length - 1] = [prev[0], e];
+      } else if (gap <= minSilence) {
+        // Small gap: just merge
+        merged[merged.length - 1] = [prev[0], e];
+      } else {
+        merged.push([s, e]);
+      }
     }
 
-    // Lazy load Whisper
-    document.getElementById('btnTranscribe').addEventListener('click', async () => {
-        if (!state.audioData) return alert("Сначала выполните анализ аудио");
-        
-        const status = document.getElementById('statusWhisper');
-        const progressFill = document.getElementById('whisperProgress');
-        
-        try {
-            status.textContent = "Загрузка библиотеки Transformers.js...";
-            const { pipeline, env } = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2/dist/transformers.min.js');
-            env.allowLocalModels = false;
-            
-            status.textContent = "Загрузка модели (кэшируется)...";
-            const transcriber = await pipeline('automatic-speech-recognition', 'Xenova/whisper-small', {
-                quantized: true,
-                progress_callback: data => {
-                    if (data.status === 'progress') {
-                        progressFill.style.width = `${data.progress}%`;
-                    }
-                }
-            });
-            
-            status.textContent = "Транскрибация... Это займет время.";
-            // Примечание: Для реальной работы Whisper нужен массив 16кГц 1х. 
-            // В нашем подходе массив сжат в 4 раза по времени из-за playbackRate=4.0 
-            // Полноценная транскрипция потребует извлечения аудио без ускорения.
-            // Для демо-PWA используем текущий буфер.
-            
-            const result = await transcriber(state.audioData, {
-                language: 'russian',
-                task: 'transcribe',
-                chunk_length_s: 30,
-                stride_length_s: 2
-            });
-            
-            state.subtitlesText = result.text; // Формирование SRT упущено для экономии объема, доступно в result.chunks
-            
-            const editor = document.getElementById('subtitlesEditor');
-            editor.style.display = 'block';
-            editor.value = "1\n00:00:00,000 --> 00:00:10,000\n" + result.text; // Демо SRT
-            
-            status.textContent = "Готово!";
-            
-        } catch (err) {
-            status.textContent = "Ошибка транскрипции: Нехватка памяти устройства или сбой сети.";
-            status.classList.add('error');
-        }
+    addLog(`Найдено ${merged.length} активных сегментов`, 'success');
+
+    if (merged.length === 0) {
+      showNotif('error', 'Нет активных сегментов', ' Попробуйте снизить порог громкости или уменьшить минимальную длину тишины.');
+      btnProcess.disabled = false;
+      progressPanel.classList.remove('visible');
+      setPipelineStep('settings');
+      return;
+    }
+
+    const loudDuration = merged.reduce((sum, [s, e]) => sum + (e - s), 0);
+    const removedDuration = totalDuration - loudDuration;
+    addLog(`Будет удалено: ${removedDuration.toFixed(1)}с (${(removedDuration/totalDuration*100).toFixed(1)}%)`);
+
+    setProgress(50, 'Подготовка к рендерингу...');
+    await sleep(100);
+
+    // — Render output video —
+    addLog('Запуск рендеринга через MediaRecorder...');
+    setProgress(55, 'Рендеринг видео...');
+
+    const outputBlob = await renderSegments(merged, totalDuration, (pct) => {
+      setProgress(55 + pct * 0.4, 'Рендеринг видео...');
+      if (pct % 20 < 2) addLog(`Прогресс рендеринга: ${Math.round(pct)}%`);
     });
 
-    // Lazy load FFmpeg
-    document.getElementById('btnExport').addEventListener('click', async () => {
-        if (!state.file || state.activeSegments.length === 0) return alert("Анализ не выполнен");
-        
-        const status = document.getElementById('statusExport');
-        const progressFill = document.getElementById('ffmpegProgress');
-        
-        try {
-            status.textContent = "Загрузка FFmpeg.wasm...";
-            const { FFmpeg } = await import('https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js');
-            const { fetchFile } = await import('https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.2/dist/esm/index.js');
-            
-            const ffmpeg = new FFmpeg();
-            
-            ffmpeg.on('progress', ({ progress }) => {
-                progressFill.style.width = `${Math.max(0, Math.min(100, progress * 100))}%`;
-            });
-            
-            status.textContent = "Инициализация ядра...";
-            await ffmpeg.load({
-                coreURL: 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm/ffmpeg-core.js',
-                wasmURL: 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm/ffmpeg-core.wasm'
-            }); // Использование non-MT сборки как Fallback
-            
-            status.textContent = "Подготовка файлов...";
-            await ffmpeg.writeFile('input.mp4', await fetchFile(state.file));
-            
-            let concatList = '';
-            for (let i = 0; i < state.activeSegments.length; i++) {
-                const seg = state.activeSegments[i];
-                const outName = `part_${i}.mp4`;
-                status.textContent = `Обрезка части ${i+1}/${state.activeSegments.length}...`;
-                await ffmpeg.exec([
-                    '-i', 'input.mp4',
-                    '-ss', seg.start.toFixed(3),
-                    '-to', seg.end.toFixed(3),
-                    '-c', 'copy',
-                    outName
-                ]);
-                concatList += `file '${outName}'\n`;
-            }
-            
-            await ffmpeg.writeFile('concat.txt', concatList);
-            status.textContent = "Склеивание сегментов...";
-            
-            const burnSubs = document.getElementById('burnSubs').checked;
-            
-            if (burnSubs && state.subtitlesText) {
-                await ffmpeg.writeFile('subs.srt', document.getElementById('subtitlesEditor').value);
-                await ffmpeg.exec(['-f', 'concat', '-safe', '0', '-i', 'concat.txt', '-vf', 'subtitles=subs.srt', '-c:a', 'copy', 'output.mp4']);
-            } else {
-                await ffmpeg.exec(['-f', 'concat', '-safe', '0', '-i', 'concat.txt', '-c', 'copy', 'output.mp4']);
-            }
-            
-            const data = await ffmpeg.readFile('output.mp4');
-            const url = URL.createObjectURL(new Blob([data.buffer], { type: 'video/mp4' }));
-            
-            const links = document.getElementById('downloadLinks');
-            links.innerHTML = `<a href="${url}" download="cut_video.mp4" class="btn" style="text-align:center; text-decoration:none; display:inline-block;">Скачать готовое видео (MP4)</a>`;
-            
-            status.textContent = "Рендер успешно завершен!";
-            
-        } catch (err) {
-            status.textContent = "Ошибка при рендеринге (проверьте кодеки исходного файла).";
-            console.error(err);
-            status.classList.add('error');
-        }
+    setProgress(97, 'Финализация...');
+    addLog('Сборка финального файла...', 'success');
+    await sleep(200);
+
+    setProgress(100, 'Готово!');
+    addLog('✓ Обработка завершена!', 'success');
+
+    showResult(outputBlob, {
+      originalDuration: totalDuration,
+      outputDuration: loudDuration,
+      removedDuration,
+      segmentCount: merged.length,
+      originalSize: currentFile.size,
     });
+
+  } catch (err) {
+    console.error(err);
+    addLog('Ошибка: ' + err.message, 'error');
+    showNotif('error', 'Ошибка обработки', ' ' + err.message);
+    btnProcess.disabled = false;
+    setPipelineStep('settings');
+  }
+}
+
+async function renderSegments(segments, totalDuration, onProgress) {
+  return new Promise((resolve, reject) => {
+    const video = sourceVideo;
+
+    // Setup canvas to draw frames
+    const canvas = document.createElement('canvas');
+    // We need to know video dimensions after metadata loaded
+    video.addEventListener('loadedmetadata', start, { once: true });
+    if (video.readyState >= 1) start();
+
+    function start() {
+      canvas.width = video.videoWidth || 1280;
+      canvas.height = video.videoHeight || 720;
+      const ctx2d = canvas.getContext('2d');
+
+      // Setup audio capture too
+      let stream;
+      try {
+        const videoStream = canvas.captureStream(30);
+        // Audio from source video
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const src = audioCtx.createMediaElementSource(video);
+        const dest = audioCtx.createMediaStreamDestination();
+        src.connect(dest);
+        src.connect(audioCtx.destination);
+        const audioTrack = dest.stream.getAudioTracks()[0];
+        if (audioTrack) videoStream.addTrack(audioTrack);
+        stream = videoStream;
+      } catch(e) {
+        stream = canvas.captureStream(30);
+      }
+
+      const mimeType = ['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'].find(m => MediaRecorder.isTypeSupported(m)) || 'video/webm';
+      const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 5_000_000 });
+      const chunks = [];
+      recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+      recorder.onstop = () => resolve(new Blob(chunks, { type: mimeType }));
+      recorder.onerror = e => reject(e.error);
+      recorder.start(100);
+
+      let segIdx = 0;
+      let drawHandle = null;
+
+      function drawLoop() {
+        ctx2d.drawImage(video, 0, 0, canvas.width, canvas.height);
+        drawHandle = requestAnimationFrame(drawLoop);
+      }
+
+      function processNextSegment() {
+        if (segIdx >= segments.length) {
+          cancelAnimationFrame(drawHandle);
+          recorder.stop();
+          return;
+        }
+
+        const [start, end] = segments[segIdx];
+        segIdx++;
+
+        video.currentTime = start;
+        video.addEventListener('seeked', function onSeeked() {
+          video.removeEventListener('seeked', onSeeked);
+          drawLoop();
+          video.play();
+
+          const checkEnd = setInterval(() => {
+            if (video.currentTime >= end - 0.05 || video.ended) {
+              clearInterval(checkEnd);
+              video.pause();
+              cancelAnimationFrame(drawHandle);
+              const progress = segIdx / segments.length * 100;
+              onProgress(progress);
+              setTimeout(processNextSegment, 50);
+            }
+          }, 30);
+        }, { once: true });
+      }
+
+      processNextSegment();
+    }
+  });
+}
+
+function showResult(blob, stats) {
+  setPipelineStep('result');
+  document.getElementById('progress-panel').classList.remove('visible');
+  const resultPanel = document.getElementById('result-panel');
+  resultPanel.classList.add('visible');
+  resultPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  document.getElementById('result-subtitle').textContent =
+    `Удалено ${stats.removedDuration.toFixed(1)} с · ${stats.segmentCount} сегментов звука · ${(stats.removedDuration/stats.originalDuration*100).toFixed(1)}% вырезано`;
+
+  // Stats
+  document.getElementById('stats-grid').innerHTML = `
+    <div class="stat-card highlight">
+      <div class="stat-label">Сэкономлено</div>
+      <div class="stat-value">${(stats.removedDuration/stats.originalDuration*100).toFixed(0)}<span class="stat-unit">%</span></div>
+      <div class="stat-unit">${stats.removedDuration.toFixed(1)} секунд</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Было</div>
+      <div class="stat-value">${formatTime(stats.originalDuration)}</div>
+      <div class="stat-unit">длительность</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Стало</div>
+      <div class="stat-value">${formatTime(stats.outputDuration)}</div>
+      <div class="stat-unit">длительность</div>
+    </div>
+  `;
+
+  // Preview
+  const blobUrl = URL.createObjectURL(blob);
+  document.getElementById('video-preview').innerHTML = `
+    <video controls playsinline>
+      <source src="${blobUrl}" type="${blob.type}">
+    </video>
+  `;
+
+  // Download
+  const btnDl = document.getElementById('btn-download');
+  btnDl.onclick = () => {
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    const ext = blob.type.includes('mp4') ? 'mp4' : 'webm';
+    a.download = (currentFile?.name?.replace(/\.[^.]+$/, '') || 'video') + '_cut.' + ext;
+    a.click();
+  };
+
+  btnProcess.disabled = false;
+}
+
+document.getElementById('btn-restart').addEventListener('click', clearFile);
+
+// ============================
+// ACCORDION
+// ============================
+['acc-how','acc-limits','acc-python'].forEach(id => {
+  const header = document.getElementById(id);
+  const body = document.getElementById(id + '-body');
+  header.addEventListener('click', () => {
+    const isOpen = body.classList.contains('open');
+    header.classList.toggle('open', !isOpen);
+    body.classList.toggle('open', !isOpen);
+  });
+});
+
+// ============================
+// UTILS
+// ============================
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+function formatTime(sec) {
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return m > 0 ? `${m}м ${s.toString().padStart(2,'0')}с` : `${s}с`;
+}
+
+
+// ============================
+// PWA — MANIFEST (inline blob)
+// ============================
+(function() {
+  // Generate SVG icon as data URL
+  const svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+    <rect width="512" height="512" rx="120" fill="#01696f"/>
+    <rect x="80" y="176" width="60" height="160" rx="30" fill="white"/>
+    <rect x="200" y="112" width="60" height="288" rx="30" fill="white"/>
+    <rect x="320" y="208" width="60" height="96" rx="30" fill="rgba(255,255,255,0.35)"/>
+    <line x1="356" y1="176" x2="452" y2="336" stroke="#ff6b6b" stroke-width="28" stroke-linecap="round"/>
+    <line x1="452" y1="176" x2="356" y2="336" stroke="#ff6b6b" stroke-width="28" stroke-linecap="round"/>
+  </svg>`;
+  const iconDataUrl = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgIcon)));
+
+  // Set apple touch icon
+  const appleIcon = document.getElementById('apple-touch-icon');
+  if (appleIcon) appleIcon.href = iconDataUrl;
+
+  // Build manifest object
+  const manifest = {
+    name: 'SilenceCut — Автомонтаж видео',
+    short_name: 'SilenceCut',
+    description: 'Автоматически вырезает тишину из видео прямо в браузере',
+    start_url: './',
+    display: 'standalone',
+    orientation: 'any',
+    background_color: '#0f0f0d',
+    theme_color: '#01696f',
+    categories: ['productivity', 'utilities'],
+    lang: 'ru',
+    icons: [
+      { src: iconDataUrl, sizes: '192x192', type: 'image/svg+xml', purpose: 'any maskable' },
+      { src: iconDataUrl, sizes: '512x512', type: 'image/svg+xml', purpose: 'any maskable' },
+    ],
+    shortcuts: [
+      {
+        name: 'Открыть редактор',
+        short_name: 'Редактор',
+        description: 'Быстро открыть SilenceCut',
+        url: './',
+        icons: [{ src: iconDataUrl, sizes: '96x96' }]
+      }
+    ]
+  };
+
+  const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+  const manifestUrl = URL.createObjectURL(blob);
+  const linkEl = document.getElementById('pwa-manifest');
+  if (linkEl) linkEl.href = manifestUrl;
+})();
+
+// ============================
+// PWA — SERVICE WORKER (inline blob)
+// ============================
+(function() {
+  if (!('serviceWorker' in navigator)) return;
+
+  const CACHE_NAME = 'silencecut-v1';
+
+  const swCode = `
+const CACHE = '${`silencecut-v1`}';
+const ASSETS = ['./', location.href];
+
+self.addEventListener('install', e => {
+  e.waitUntil(
+    caches.open(CACHE).then(c => {
+      try { return c.addAll(ASSETS); } catch(err) { return Promise.resolve(); }
+    }).then(() => self.skipWaiting())
+  );
+});
+
+self.addEventListener('activate', e => {
+  e.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+    ).then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener('fetch', e => {
+  // Only handle same-origin or blob requests
+  if (!e.request.url.startsWith(self.location.origin) && !e.request.url.startsWith('blob:')) return;
+  e.respondWith(
+    caches.match(e.request).then(cached => {
+      if (cached) return cached;
+      return fetch(e.request).then(response => {
+        if (!response || response.status !== 200 || response.type === 'opaque') return response;
+        const clone = response.clone();
+        caches.open(CACHE).then(c => c.put(e.request, clone));
+        return response;
+      }).catch(() => caches.match('./'));
+    })
+  );
+});
+
+self.addEventListener('message', e => {
+  if (e.data && e.data.type === 'SKIP_WAITING') self.skipWaiting();
+});
+`;
+
+  const swBlob = new Blob([swCode], { type: 'application/javascript' });
+  const swUrl = URL.createObjectURL(swBlob);
+
+  navigator.serviceWorker.register(swUrl, { scope: './' })
+    .then(reg => {
+      console.log('[SW] Registered:', reg.scope);
+      // Show installed badge
+      if (reg.active) showPwaBadge();
+      reg.addEventListener('updatefound', () => {
+        const newWorker = reg.installing;
+        newWorker.addEventListener('statechange', () => {
+          if (newWorker.state === 'activated') showPwaBadge();
+        });
+      });
+    })
+    .catch(err => console.warn('[SW] Registration failed:', err));
+})();
+
+// ============================
+// PWA — INSTALL PROMPT
+// ============================
+let deferredPrompt = null;
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  showInstallBanner();
+});
+
+window.addEventListener('appinstalled', () => {
+  hidePwaBanner();
+  showPwaBadge();
+  deferredPrompt = null;
+});
+
+function showInstallBanner() {
+  const banner = document.getElementById('pwa-install-banner');
+  if (banner) banner.classList.add('visible');
+}
+
+function hidePwaBanner() {
+  const banner = document.getElementById('pwa-install-banner');
+  if (banner) banner.classList.remove('visible');
+}
+
+function showPwaBadge() {
+  const badge = document.getElementById('pwa-badge');
+  if (badge) badge.classList.add('visible');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const btnInstall = document.getElementById('btn-pwa-install');
+  const btnDismiss = document.getElementById('btn-pwa-dismiss');
+
+  if (btnInstall) {
+    btnInstall.addEventListener('click', async () => {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      hidePwaBanner();
+      if (outcome === 'accepted') showPwaBadge();
+    });
+  }
+
+  if (btnDismiss) {
+    btnDismiss.addEventListener('click', hidePwaBanner);
+  }
+
+  // If already running as PWA (standalone)
+  if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
+    showPwaBadge();
+  }
+});
 
 </script>
+
+<!-- PWA Install Banner -->
+<div class="pwa-install-banner" id="pwa-install-banner" role="complementary" aria-label="Установить приложение">
+  <div class="pwa-install-icon">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+      <polyline points="7 10 12 15 17 10"/>
+      <line x1="12" y1="15" x2="12" y2="3"/>
+    </svg>
+  </div>
+  <div class="pwa-install-text">
+    <strong>Установить SilenceCut</strong>
+    <span>Работает без интернета, как нативное приложение</span>
+  </div>
+  <div class="pwa-install-actions">
+    <button class="btn-pwa-install" id="btn-pwa-install" aria-label="Установить">Установить</button>
+    <button class="btn-pwa-dismiss" id="btn-pwa-dismiss" aria-label="Закрыть">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+</div>
+
 </body>
 </html>
