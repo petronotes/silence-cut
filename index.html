@@ -293,51 +293,39 @@ a, button, [role="button"], input, select { transition: color var(--transition-i
 /* ==================== WAVEFORM ==================== */
 .waveform-container {
   display: none; flex-direction: column; gap: var(--space-3); margin-top: var(--space-4);
-  padding: var(--space-4); background: var(--color-surface-2); border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
+  padding: var(--space-4); background: var(--color-surface-2);
+  border: 1px solid var(--color-border); border-radius: var(--radius-lg);
 }
 .waveform-container.visible { display: flex; }
-.waveform-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-2); }
-.waveform-label { font-size: var(--text-xs); font-weight: 600; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
-.waveform-time-display {
-  font-size: var(--text-xs); font-family: var(--font-mono); font-weight: 600;
-  color: var(--color-primary); padding: 2px var(--space-3);
-  background: var(--color-primary-highlight); border-radius: var(--radius-full);
-  min-width: 80px; text-align: center;
-}
-.waveform-canvas-wrap {
+.waveform-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); flex-wrap: wrap; }
+.waveform-label { font-size: var(--text-xs); font-weight: 700; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.waveform-mini-stats { font-size: var(--text-xs); color: var(--color-text-muted); font-family: var(--font-mono); }
+.waveform-stage {
   position: relative; width: 100%; border-radius: var(--radius-md); overflow: hidden;
-  background: var(--color-bg); cursor: crosshair;
-  box-shadow: inset 0 1px 4px oklch(0 0 0 / 0.06);
+  border: 1px solid var(--color-divider); background: var(--color-bg);
 }
-#waveform-canvas { width: 100%; height: 120px; display: block; }
-#waveform-overlay { position: absolute; inset: 0; pointer-events: none; }
-.waveform-playhead {
-  position: absolute; top: 0; bottom: 0; width: 2px;
-  background: var(--color-text); opacity: 0.6; pointer-events: none;
-  display: none;
-}
+.waveform-canvas { width: 100%; height: 140px; display: block; cursor: crosshair; }
 .waveform-tooltip {
-  position: absolute; top: 4px; transform: translateX(-50%);
-  background: var(--color-text); color: var(--color-bg);
-  font-size: 10px; font-family: var(--font-mono); font-weight: 600;
-  padding: 2px 7px; border-radius: var(--radius-full);
-  pointer-events: none; white-space: nowrap; display: none;
+  position: absolute; top: 8px; left: 8px; z-index: 3; pointer-events: none;
+  font-size: var(--text-xs); font-family: var(--font-mono); color: var(--color-text);
+  background: color-mix(in oklch, var(--color-surface) 94%, transparent);
+  border: 1px solid var(--color-border); border-radius: var(--radius-md);
+  padding: 4px 8px; box-shadow: var(--shadow-sm); white-space: nowrap;
 }
-.waveform-stats {
-  display: flex; gap: var(--space-4); flex-wrap: wrap;
-}
-.waveform-stat {
-  display: flex; flex-direction: column; gap: 2px;
-}
-.waveform-stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-text-faint); font-weight: 600; }
-.waveform-stat-val { font-size: var(--text-xs); font-family: var(--font-mono); font-weight: 700; color: var(--color-text-muted); }
-.waveform-stat-val.keep { color: var(--color-warning); }
-.waveform-stat-val.cut { color: var(--color-error); }
-.waveform-stat-val.sound { color: var(--color-primary); }
 .waveform-legend { display: flex; gap: var(--space-5); flex-wrap: wrap; }
 .legend-item { display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-xs); color: var(--color-text-muted); }
-.legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+.legend-dot { width: 8px; height: 8px; border-radius: 2px; }
+.waveform-stats-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-2);
+}
+@media (max-width: 600px) { .waveform-stats-grid { grid-template-columns: repeat(2, 1fr); } }
+.wave-stat {
+  background: var(--color-surface-offset); border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  display: flex; flex-direction: column; gap: 2px;
+}
+.wave-stat-label { font-size: var(--text-xs); color: var(--color-text-faint); text-transform: uppercase; letter-spacing: 0.05em; }
+.wave-stat-value { font-size: var(--text-sm); font-weight: 700; font-family: var(--font-mono); color: var(--color-text); }
 
 /* ==================== PROCESS BUTTON ==================== */
 .btn-primary {
@@ -700,25 +688,39 @@ a, button, [role="button"], input, select { transition: color var(--transition-i
 
     <!-- Waveform -->
     <div class="waveform-container" id="waveform-container">
-      <div class="waveform-header">
+      <div class="waveform-head">
         <div class="waveform-label">Интерактивная аудиовизуализация</div>
-        <div class="waveform-time-display" id="waveform-time">—</div>
+        <div class="waveform-mini-stats" id="waveform-mini-stats">Наведите на волну для деталей</div>
       </div>
-      <div class="waveform-canvas-wrap" id="waveform-wrap">
-        <canvas id="waveform-canvas" height="120" aria-label="Визуализация аудио"></canvas>
-        <canvas id="waveform-overlay" height="120" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
-        <div class="waveform-playhead" id="waveform-playhead"></div>
-        <div class="waveform-tooltip" id="waveform-tooltip"></div>
+      <div class="waveform-stage" id="waveform-stage">
+        <canvas class="waveform-canvas" id="waveform-canvas" width="900" height="140" aria-label="Интерактивная визуализация аудио"></canvas>
+        <div class="waveform-tooltip" id="waveform-tooltip" hidden></div>
       </div>
-      <div style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:var(--space-4);">
-        <div class="waveform-legend">
-          <div class="legend-item"><div class="legend-dot" style="background:var(--color-primary)"></div> Звук (сохраняется)</div>
-          <div class="legend-item"><div class="legend-dot" style="background:var(--color-warning);opacity:0.8"></div> Тишина (≤ макс., сохраняется)</div>
-          <div class="legend-item"><div class="legend-dot" style="background:var(--color-surface-dynamic)"></div> Тишина (вырезается)</div>
+      <div class="waveform-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--color-primary)"></div> Звук (остаётся)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--color-error)"></div> Тишина (вырезается)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--color-warning)"></div> Короткая пауза (сохраняется)</div>
+      </div>
+      <div class="waveform-stats-grid" id="waveform-stats-grid">
+        <div class="wave-stat">
+          <span class="wave-stat-label">Остаётся</span>
+          <span class="wave-stat-value" id="stat-keep">—</span>
         </div>
-        <div class="waveform-stats" id="waveform-stats"></div>
+        <div class="wave-stat">
+          <span class="wave-stat-label">Вырежется</span>
+          <span class="wave-stat-value" id="stat-cut">—</span>
+        </div>
+        <div class="wave-stat">
+          <span class="wave-stat-label">Сегментов</span>
+          <span class="wave-stat-value" id="stat-segments">—</span>
+        </div>
+        <div class="wave-stat">
+          <span class="wave-stat-label">Курсор</span>
+          <span class="wave-stat-value" id="stat-hover">—</span>
+        </div>
       </div>
     </div>
+  </div>
 
   <!-- PROCESS BUTTON -->
   <button class="btn-primary" id="btn-process" disabled>
@@ -954,11 +956,6 @@ const sourceVideo = document.getElementById('source-video');
 
 let currentFile = null;
 let audioBuffer = null;
-let previewAnalysis = null;
-let previewSegments = [];
-let hoverTime = null;
-let waveformRaf = null;
-let redrawTimer = null;
 
 dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag-over'); });
 dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
@@ -991,10 +988,7 @@ function handleFile(file) {
   }).then(buf => {
     audioBuffer = buf;
     fileMetaDisplay.textContent = `${(file.size / 1024 / 1024).toFixed(1)} МБ · ${buf.sampleRate} Hz · ${formatTime(buf.duration)}`;
-    buildPreviewAnalysis(buf);
-    updatePreviewFromSliders();
-    attachWaveformInteractions();
-    startWaveformPlaybackMarker();
+    if (document.getElementById('show-wave').checked) drawWaveform(buf);
   }).catch(err => {
     showNotif('warn', 'Аудиодорожка не найдена', 'Возможно, видео без звука. Обработка будет основана только на длительности.');
   });
@@ -1006,384 +1000,198 @@ function clearFile() {
   sourceVideo.src = '';
   fileInfo.classList.remove('visible');
   btnProcess.disabled = true;
-  document.getElementById('waveform-container').classList.remove('visible');
+  const wc = document.getElementById('waveform-container');
+  wc.classList.remove('visible');
+  ['stat-keep','stat-cut','stat-segments','stat-hover'].forEach(id => {
+    document.getElementById(id).textContent = '—';
+  });
   hideNotif();
   document.getElementById('result-panel').classList.remove('visible');
   document.getElementById('progress-panel').classList.remove('visible');
   setPipelineStep('upload');
-
-  previewAnalysis = null;
-  previewSegments = [];
-  hoverTime = null;
-  cancelAnimationFrame(waveformRaf);
-  waveformRaf = null;
-  document.getElementById('waveform-tooltip').hidden = true;
-  document.getElementById('waveform-mini-stats').textContent = 'Загрузите видео для анализа';
-  document.getElementById('stat-keep').textContent = '—';
-  document.getElementById('stat-cut').textContent = '—';
-  document.getElementById('stat-segments').textContent = '—';
-  document.getElementById('stat-hover').textContent = '—';
-  
 }
 
 // ============================
-// WAVEFORM PREVIEW
+// WAVEFORM
 // ============================
-const waveformContainer = document.getElementById('waveform-container');
-const waveformCanvas = document.getElementById('waveform-canvas');
-const waveformTooltip = document.getElementById('waveform-tooltip');
-const waveformStage = document.getElementById('waveform-stage');
-
-document.getElementById('show-wave').addEventListener('change', function () {
-  if (this.checked && audioBuffer) {
-    waveformContainer.classList.add('visible');
-    updatePreviewFromSliders();
-  } else {
-    waveformContainer.classList.remove('visible');
-  }
+document.getElementById('show-wave').addEventListener('change', function() {
+  if (this.checked && audioBuffer) drawWaveform(audioBuffer);
+  else document.getElementById('waveform-container').classList.remove('visible');
 });
 
-function buildPreviewAnalysis(buf) {
-  const data = buf.getChannelData(0);
+let _waveDebounce = null;
+let _lastSegments = [];
+
+function computeSegmentsFromParams(buf) {
   const sampleRate = buf.sampleRate;
-  const duration = buf.duration;
-
-  const frameSize = Math.max(256, Math.floor(sampleRate * 0.02));
-  const hopSize = Math.max(128, Math.floor(frameSize / 2));
-  const totalFrames = Math.max(1, Math.floor((data.length - frameSize) / hopSize));
-
-  const frames = new Array(totalFrames);
-  const dbValues = new Float32Array(totalFrames);
-
-  for (let i = 0; i < totalFrames; i++) {
-    const start = i * hopSize;
-    let sum = 0;
-    for (let j = 0; j < frameSize; j++) {
-      const v = data[start + j] || 0;
-      sum += v * v;
-    }
-    const rms = Math.sqrt(sum / frameSize);
-    const db = 20 * Math.log10(rms + 1e-9);
-    dbValues[i] = db;
-    frames[i] = {
-      time: start / sampleRate,
-      db,
-      amp: Math.min(1, Math.max(0, (db + 72) / 72))
-    };
-  }
-
-  previewAnalysis = {
-    duration,
-    sampleRate,
-    frameSize,
-    hopSize,
-    frameDuration: hopSize / sampleRate,
-    frames,
-    dbValues
-  };
-}
-
-function updatePreviewFromSliders() {
-  if (!audioBuffer || !previewAnalysis) return;
-  if (!document.getElementById('show-wave').checked) return;
-
-  waveformContainer.classList.add('visible');
-
+  const channelData = buf.getChannelData(0);
   const threshold = parseFloat(document.getElementById('threshold').value);
   const minSilence = parseFloat(document.getElementById('min-silence').value);
-  const padBefore = parseFloat(document.getElementById('pad-before').value);
-  const padAfter = parseFloat(document.getElementById('pad-after').value);
-  const maxKeep = parseFloat(document.getElementById('max-keep').value);
-  const smoothing = parseFloat(document.getElementById('smoothing').value);
-
-  previewSegments = computePreviewSegments({
-    frames: previewAnalysis.frames,
-    duration: previewAnalysis.duration,
-    frameDuration: previewAnalysis.frameDuration,
-    threshold,
-    minSilence,
-    padBefore,
-    padAfter,
-    maxKeep,
-    smoothing
-  });
-
-  renderInteractiveWaveform();
-  updateWaveformStats();
+  const padBefore  = parseFloat(document.getElementById('pad-before').value);
+  const padAfter   = parseFloat(document.getElementById('pad-after').value);
+  const maxKeep    = parseFloat(document.getElementById('max-keep').value);
+  const smoothing  = parseFloat(document.getElementById('smoothing').value);
+  const frameLen = Math.floor(sampleRate * 0.02);
+  const hopLen = Math.floor(frameLen / 2);
+  const totalDuration = buf.duration;
+  const numFrames = Math.floor((channelData.length - frameLen) / hopLen);
+  const isLoud = new Uint8Array(numFrames);
+  for (let i = 0; i < numFrames; i++) {
+    let sum = 0;
+    const start = i * hopLen;
+    for (let j = 0; j < frameLen; j++) { const v = channelData[start + j] || 0; sum += v * v; }
+    isLoud[i] = (10 * Math.log10(sum / frameLen + 1e-12)) >= threshold ? 1 : 0;
+  }
+  const smoothFrames = Math.max(1, Math.round(smoothing / (hopLen / sampleRate)));
+  const smoothed = new Uint8Array(numFrames);
+  for (let i = 0; i < numFrames; i++) {
+    let cnt = 0;
+    const from = Math.max(0, i - smoothFrames), to = Math.min(numFrames - 1, i + smoothFrames);
+    for (let k = from; k <= to; k++) cnt += isLoud[k];
+    smoothed[i] = cnt > (to - from + 1) / 2 ? 1 : 0;
+  }
+  const frameTime = hopLen / sampleRate;
+  const segs = []; let inLoud = false, segStart = 0;
+  for (let i = 0; i < numFrames; i++) {
+    if (smoothed[i] && !inLoud) { inLoud = true; segStart = Math.max(0, i * frameTime - padBefore); }
+    else if (!smoothed[i] && inLoud) {
+      inLoud = false;
+      const segEnd = Math.min(totalDuration, i * frameTime + padAfter);
+      if (segEnd - segStart >= 0.05) segs.push([segStart, segEnd]);
+    }
+  }
+  if (inLoud) segs.push([segStart, totalDuration]);
+  const merged = [];
+  for (const [s, e] of segs) {
+    if (!merged.length) { merged.push([s, e]); continue; }
+    const prev = merged[merged.length - 1];
+    const gap = s - prev[1];
+    if (gap <= maxKeep || gap <= minSilence) merged[merged.length - 1] = [prev[0], e];
+    else merged.push([s, e]);
+  }
+  return { segments: merged, totalDuration, maxKeep };
 }
 
-function computePreviewSegments(opts) {
-  const {
-    frames, duration, frameDuration,
-    threshold, minSilence, padBefore, padAfter, maxKeep, smoothing
-  } = opts;
+function drawWaveform(buf) {
+  const container = document.getElementById('waveform-container');
+  container.classList.add('visible');
+  const canvas = document.getElementById('waveform-canvas');
+  const ctx2d = canvas.getContext('2d');
+  const stage = document.getElementById('waveform-stage');
+  const W = stage.offsetWidth || 900;
+  const H = 140;
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  ctx2d.scale(dpr, dpr);
 
-  const loudFlags = frames.map(f => f.db >= threshold);
-  const smoothFrames = Math.max(0, Math.round(smoothing / frameDuration));
-  const smoothed = new Array(loudFlags.length).fill(false);
+  const data = buf.getChannelData(0);
+  const numBars = Math.floor(W / 3);
+  const blockSize = Math.floor(data.length / numBars);
 
-  for (let i = 0; i < loudFlags.length; i++) {
-    const from = Math.max(0, i - smoothFrames);
-    const to = Math.min(loudFlags.length - 1, i + smoothFrames);
-    let loudCount = 0;
-    for (let k = from; k <= to; k++) loudCount += loudFlags[k] ? 1 : 0;
-    smoothed[i] = loudCount >= ((to - from + 1) / 2);
+  const rmsArr = [];
+  for (let i = 0; i < numBars; i++) {
+    let sum = 0;
+    for (let j = 0; j < blockSize; j++) sum += data[i * blockSize + j] ** 2;
+    rmsArr.push(Math.sqrt(sum / blockSize));
   }
+  const maxRms = Math.max(...rmsArr, 1e-9);
+  const barDuration = buf.duration / numBars;
 
-  const rawLoudSegments = [];
-  let active = false;
-  let segStart = 0;
+  const { segments, totalDuration, maxKeep } = computeSegmentsFromParams(buf);
+  _lastSegments = segments;
 
-  for (let i = 0; i < smoothed.length; i++) {
-    const t = i * frameDuration;
-    if (smoothed[i] && !active) {
-      active = true;
-      segStart = Math.max(0, t - padBefore);
-    } else if (!smoothed[i] && active) {
-      active = false;
-      const segEnd = Math.min(duration, t + padAfter);
-      if (segEnd - segStart > 0.03) rawLoudSegments.push({ start: segStart, end: segEnd });
+  function getBarState(barIdx) {
+    const t = barIdx * barDuration;
+    for (const [s, e] of segments) {
+      if (t >= s && t <= e) return 'keep';
     }
-  }
-
-  if (active) {
-    rawLoudSegments.push({ start: segStart, end: duration });
-  }
-
-  const merged = [];
-  for (const seg of rawLoudSegments) {
-    if (!merged.length) {
-      merged.push({ ...seg });
-      continue;
-    }
-    const prev = merged[merged.length - 1];
-    const gap = seg.start - prev.end;
-    if (gap <= maxKeep || gap <= minSilence) {
-      prev.end = Math.max(prev.end, seg.end);
-    } else {
-      merged.push({ ...seg });
-    }
-  }
-
-  const timeline = [];
-  let cursor = 0;
-
-  for (let i = 0; i < merged.length; i++) {
-    const seg = merged[i];
-
-    if (seg.start > cursor) {
-      const gap = seg.start - cursor;
-      if (gap <= maxKeep) {
-        timeline.push({ start: cursor, end: seg.start, type: 'kept-silence' });
-      } else {
-        timeline.push({ start: cursor, end: seg.start, type: 'cut' });
+    for (let i = 0; i < segments.length - 1; i++) {
+      const gapStart = segments[i][1];
+      const gapEnd   = segments[i + 1][0];
+      if (t >= gapStart && t <= gapEnd) {
+        return (gapEnd - gapStart) <= maxKeep ? 'short-silence' : 'cut';
       }
     }
-
-    timeline.push({ start: seg.start, end: seg.end, type: 'keep' });
-    cursor = seg.end;
+    return 'cut';
   }
-
-  if (cursor < duration) {
-    const tail = duration - cursor;
-    timeline.push({
-      start: cursor,
-      end: duration,
-      type: tail <= maxKeep ? 'kept-silence' : 'cut'
-    });
-  }
-
-  return timeline;
-}
-
-function getSegmentTypeAtTime(t) {
-  for (const seg of previewSegments) {
-    if (t >= seg.start && t <= seg.end) return seg.type;
-  }
-  return 'cut';
-}
-
-function renderInteractiveWaveform() {
-  const canvas = waveformCanvas;
-  const rect = canvas.getBoundingClientRect();
-  const dpr = window.devicePixelRatio || 1;
-  const W = Math.max(300, Math.floor(rect.width));
-  const H = 140;
-
-  canvas.width = W * dpr;
-  canvas.height = H * dpr;
-
-  const ctx = canvas.getContext('2d');
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.clearRect(0, 0, W, H);
 
   const cs = getComputedStyle(document.documentElement);
-  const colors = {
-    keep: cs.getPropertyValue('--color-primary').trim(),
-    cut: cs.getPropertyValue('--color-error').trim(),
-    keptSilence: cs.getPropertyValue('--color-warning').trim(),
-    grid: cs.getPropertyValue('--color-divider').trim(),
-    textFaint: cs.getPropertyValue('--color-text-faint').trim(),
-    textMuted: cs.getPropertyValue('--color-text-muted').trim(),
-    bg: cs.getPropertyValue('--color-bg').trim()
-  };
+  const colorKeep       = cs.getPropertyValue('--color-primary').trim();
+  const colorCut        = cs.getPropertyValue('--color-error').trim();
+  const colorShort      = cs.getPropertyValue('--color-warning').trim();
+  const colorFaint      = cs.getPropertyValue('--color-text-faint').trim();
+  const colorBg         = cs.getPropertyValue('--color-bg').trim();
 
-  const midY = H / 2;
-  const duration = previewAnalysis.duration;
-  const bins = Math.max(180, Math.floor(W / 3));
-  const framesPerBin = Math.max(1, Math.floor(previewAnalysis.frames.length / bins));
+  // Draw bg
+  ctx2d.fillStyle = colorBg;
+  ctx2d.fillRect(0, 0, W, H);
 
-  ctx.fillStyle = colors.bg;
-  ctx.fillRect(0, 0, W, H);
+  // Center line
+  ctx2d.strokeStyle = colorFaint + '30';
+  ctx2d.lineWidth = 1;
+  ctx2d.beginPath(); ctx2d.moveTo(0, H/2); ctx2d.lineTo(W, H/2); ctx2d.stroke();
 
-  ctx.strokeStyle = colors.grid;
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(0, midY);
-  ctx.lineTo(W, midY);
-  ctx.stroke();
-
-  for (let i = 0; i <= 4; i++) {
-    const x = (W / 4) * i;
-    ctx.strokeStyle = colors.grid;
-    ctx.beginPath();
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x, H);
-    ctx.stroke();
-
-    const time = (duration / 4) * i;
-    ctx.fillStyle = colors.textMuted;
-    ctx.font = '11px JetBrains Mono, monospace';
-    ctx.fillText(formatTimePrecise(time), Math.min(x + 4, W - 42), H - 8);
+  for (let i = 0; i < numBars; i++) {
+    const barH = Math.max(2, (rmsArr[i] / maxRms) * (H * 0.82));
+    const x = i * 3;
+    const state = getBarState(i);
+    const color = state === 'keep' ? colorKeep : state === 'short-silence' ? colorShort : colorCut;
+    ctx2d.globalAlpha = state === 'cut' ? 0.35 : 0.9;
+    ctx2d.fillStyle = color;
+    ctx2d.beginPath();
+    ctx2d.roundRect(x, (H - barH) / 2, 2, barH, 1);
+    ctx2d.fill();
   }
+  ctx2d.globalAlpha = 1;
 
-  for (let i = 0; i < bins; i++) {
-    const from = i * framesPerBin;
-    const to = Math.min(previewAnalysis.frames.length, from + framesPerBin);
-    let peak = 0;
-    let timeSum = 0;
+  // Update stats
+  const loudDur = segments.reduce((s, [a,b]) => s + (b - a), 0);
+  const cutDur  = totalDuration - loudDur;
+  document.getElementById('stat-keep').textContent     = formatTime(loudDur);
+  document.getElementById('stat-cut').textContent      = formatTime(cutDur);
+  document.getElementById('stat-segments').textContent = segments.length;
+  document.getElementById('stat-hover').textContent    = '—';
 
-    for (let j = from; j < to; j++) {
-      peak = Math.max(peak, previewAnalysis.frames[j].amp);
-      timeSum += previewAnalysis.frames[j].time;
-    }
-
-    const avgTime = timeSum / Math.max(1, to - from);
-    const type = getSegmentTypeAtTime(avgTime);
-    const barH = Math.max(2, peak * (H * 0.78));
-    const x = (i / bins) * W;
-    const y = midY - barH / 2;
-
-    ctx.fillStyle =
-      type === 'keep' ? colors.keep :
-      type === 'kept-silence' ? colors.keptSilence :
-      colors.cut;
-
-    ctx.fillRect(x, y, Math.max(1.5, W / bins - 1), barH);
-  }
-
-  if (sourceVideo && !sourceVideo.paused && !Number.isNaN(sourceVideo.currentTime)) {
-    drawPlaybackMarker(ctx, W, H, sourceVideo.currentTime, duration, colors.textFaint);
-  }
-
-  if (hoverTime != null) {
-    drawPlaybackMarker(ctx, W, H, hoverTime, duration, colors.textMuted, true);
-  }
-}
-
-function drawPlaybackMarker(ctx, W, H, time, duration, color, dashed = false) {
-  const x = Math.max(0, Math.min(W, (time / duration) * W));
-  ctx.save();
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 1.5;
-  if (dashed) ctx.setLineDash([4, 4]);
-  ctx.beginPath();
-  ctx.moveTo(x, 0);
-  ctx.lineTo(x, H);
-  ctx.stroke();
-  ctx.restore();
-}
-
-function updateWaveformStats() {
-  const duration = previewAnalysis.duration;
-  let keep = 0;
-  let cut = 0;
-  let segments = 0;
-
-  for (const seg of previewSegments) {
-    const len = seg.end - seg.start;
-    if (seg.type === 'keep' || seg.type === 'kept-silence') keep += len;
-    if (seg.type === 'cut') cut += len;
-    if (seg.type === 'keep') segments++;
-  }
-
-  document.getElementById('stat-keep').textContent =
-    `${formatTimePrecise(keep)} · ${(keep / duration * 100).toFixed(1)}%`;
-
-  document.getElementById('stat-cut').textContent =
-    `${formatTimePrecise(cut)} · ${(cut / duration * 100).toFixed(1)}%`;
-
-  document.getElementById('stat-segments').textContent = String(segments);
-  document.getElementById('waveform-mini-stats').textContent =
-    `Локальный preview: ${segments} сегм. · останется ${formatTimePrecise(keep)} · вырежется ${formatTimePrecise(cut)}`;
-}
-
-function attachWaveformInteractions() {
-  if (waveformStage.dataset.bound === '1') return;
-  waveformStage.dataset.bound = '1';
-
-  waveformCanvas.addEventListener('mousemove', (e) => {
-    if (!previewAnalysis) return;
-    const rect = waveformCanvas.getBoundingClientRect();
+  // Hover interaction
+  canvas.onmousemove = (e) => {
+    const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
-    const t = Math.max(0, Math.min(previewAnalysis.duration, (x / rect.width) * previewAnalysis.duration));
-    hoverTime = t;
-
-    const type = getSegmentTypeAtTime(t);
-    const label = type === 'keep'
-      ? 'Остается'
-      : type === 'kept-silence'
-      ? 'Короткая пауза'
-      : 'Будет вырезано';
-
-    waveformTooltip.hidden = false;
-    waveformTooltip.style.left = `${Math.min(rect.width - 110, Math.max(8, x + 10))}px`;
-    waveformTooltip.innerHTML = `${formatTimePrecise(t)} · ${label}`;
-    document.getElementById('stat-hover').textContent = `${formatTimePrecise(t)} · ${label}`;
-
-    renderInteractiveWaveform();
-  });
-
-  waveformCanvas.addEventListener('mouseleave', () => {
-    hoverTime = null;
-    waveformTooltip.hidden = true;
+    const pct = x / rect.width;
+    const t = pct * buf.duration;
+    let state = 'cut';
+    for (const [s, end] of segments) { if (t >= s && t <= end) { state = 'keep'; break; } }
+    if (state !== 'keep') {
+      for (let i = 0; i < segments.length - 1; i++) {
+        const gs = segments[i][1], ge = segments[i+1][0];
+        if (t >= gs && t <= ge) { state = (ge - gs) <= maxKeep ? 'short-silence' : 'cut'; break; }
+      }
+    }
+    const stateLabel = state === 'keep' ? '✓ Остаётся' : state === 'short-silence' ? '~ Пауза сохраняется' : '✗ Вырезается';
+    const tooltip = document.getElementById('waveform-tooltip');
+    tooltip.removeAttribute('hidden');
+    tooltip.textContent = `${formatTime(t)} — ${stateLabel}`;
+    // reposition
+    tooltip.style.left = Math.min(x + 10, W - 160) + 'px';
+    tooltip.style.top = '8px';
+    document.getElementById('stat-hover').textContent = formatTime(t);
+    document.getElementById('waveform-mini-stats').textContent = `${formatTime(t)} · ${stateLabel}`;
+  };
+  canvas.onmouseleave = () => {
+    document.getElementById('waveform-tooltip').setAttribute('hidden', '');
     document.getElementById('stat-hover').textContent = '—';
-    renderInteractiveWaveform();
-  });
-
-  waveformCanvas.addEventListener('click', (e) => {
-    if (!previewAnalysis || !sourceVideo?.duration) return;
-    const rect = waveformCanvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const t = Math.max(0, Math.min(previewAnalysis.duration, (x / rect.width) * previewAnalysis.duration));
-    sourceVideo.currentTime = t;
-    renderInteractiveWaveform();
-  });
-}
-
-function startWaveformPlaybackMarker() {
-  cancelAnimationFrame(waveformRaf);
-
-  const tick = () => {
-    if (previewAnalysis && document.getElementById('show-wave').checked) {
-      renderInteractiveWaveform();
-    }
-    waveformRaf = requestAnimationFrame(tick);
+    document.getElementById('waveform-mini-stats').textContent = 'Наведите на волну для деталей';
   };
-
-  waveformRaf = requestAnimationFrame(tick);
 }
 
+// Redraw on param change with debounce
+['threshold','min-silence','pad-before','pad-after','max-keep','smoothing'].forEach(id => {
+  document.getElementById(id).addEventListener('input', () => {
+    if (!audioBuffer || !document.getElementById('show-wave').checked) return;
+    clearTimeout(_waveDebounce);
+    _waveDebounce = setTimeout(() => drawWaveform(audioBuffer), 180);
+  });
+});
 
 // ============================
 // PIPELINE STATE
@@ -1730,20 +1538,6 @@ function showResult(blob, stats) {
 
 document.getElementById('btn-restart').addEventListener('click', clearFile);
 
-  
-function schedulePreviewRedraw() {
-  clearTimeout(redrawTimer);
-  redrawTimer = setTimeout(() => {
-    updatePreviewFromSliders();
-  }, 50);
-}
-
-['threshold', 'min-silence', 'pad-before', 'pad-after', 'max-keep', 'smoothing'].forEach(id => {
-  document.getElementById(id).addEventListener('input', schedulePreviewRedraw);
-});
-
-
-  
 // ============================
 // ACCORDION
 // ============================
@@ -1765,14 +1559,6 @@ function formatTime(sec) {
   const m = Math.floor(sec / 60);
   const s = Math.floor(sec % 60);
   return m > 0 ? `${m}м ${s.toString().padStart(2,'0')}с` : `${s}с`;
-}
-
-function formatTimePrecise(sec) {
-  if (!Number.isFinite(sec)) return '0.00с';
-  const m = Math.floor(sec / 60);
-  const s = sec % 60;
-  if (m > 0) return `${m}:${s.toFixed(2).padStart(5, '0')}`;
-  return `${s.toFixed(2)}с`;
 }
 </script>
 </body>
