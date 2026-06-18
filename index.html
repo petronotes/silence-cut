@@ -3,687 +3,1709 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SilenceCut</title>
+<title>SilenceCut — Автомонтаж видео</title>
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700&display=swap" rel="stylesheet">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-/* ===== TOKENS ===== */
-:root,[data-theme="light"]{
-  --color-bg:#f7f6f2;--color-surface:#f9f8f5;--color-surface-2:#fbfbf9;
-  --color-surface-offset:#f3f0ec;--color-surface-dynamic:#e6e4df;
-  --color-divider:#dcd9d5;--color-border:#d4d1ca;
-  --color-text:#28251d;--color-text-muted:#7a7974;--color-text-faint:#bab9b4;
-  --color-primary:#01696f;--color-primary-hover:#0c4e54;
-  --color-primary-highlight:#cedcd8;
-  --color-error:#a12c7b;--color-error-highlight:#e0ced7;
-  --color-success:#437a22;
-  --color-warning:#964219;
-  --radius-sm:.375rem;--radius-md:.5rem;--radius-lg:.75rem;--radius-xl:1rem;--radius-full:9999px;
-  --shadow-sm:0 1px 2px oklch(0.2 0.01 80/0.06);
-  --shadow-md:0 4px 12px oklch(0.2 0.01 80/0.08);
-  --shadow-lg:0 12px 32px oklch(0.2 0.01 80/0.12);
-  --transition:180ms cubic-bezier(.16,1,.3,1);
-  --font-body:'Inter',sans-serif;
-  --text-xs:clamp(.75rem,.7rem + .25vw,.875rem);
-  --text-sm:clamp(.875rem,.8rem + .35vw,1rem);
-  --text-base:clamp(1rem,.95rem + .25vw,1.125rem);
-  --text-lg:clamp(1.125rem,1rem + .75vw,1.5rem);
-  --text-xl:clamp(1.5rem,1.2rem + 1.25vw,2.25rem);
-  --space-1:.25rem;--space-2:.5rem;--space-3:.75rem;--space-4:1rem;
-  --space-5:1.25rem;--space-6:1.5rem;--space-8:2rem;--space-10:2.5rem;
-  --space-12:3rem;--space-16:4rem;
+/* ==================== DESIGN TOKENS ==================== */
+:root, [data-theme="light"] {
+  --color-bg:             #f7f6f2;
+  --color-surface:        #f9f8f5;
+  --color-surface-2:      #fbfbf9;
+  --color-surface-offset: #f3f0ec;
+  --color-surface-offset-2: #edeae5;
+  --color-surface-dynamic: #e6e4df;
+  --color-divider:        #dcd9d5;
+  --color-border:         #d4d1ca;
+  --color-text:           #28251d;
+  --color-text-muted:     #7a7974;
+  --color-text-faint:     #bab9b4;
+  --color-primary:        #01696f;
+  --color-primary-hover:  #0c4e54;
+  --color-primary-active: #0f3638;
+  --color-primary-highlight: #cedcd8;
+  --color-success:        #437a22;
+  --color-success-hover:  #2e5c10;
+  --color-success-highlight: #d4dfcc;
+  --color-warning:        #964219;
+  --color-warning-highlight: #ddcfc6;
+  --color-error:          #a12c7b;
+  --color-error-hover:    #7d1e5e;
+  --color-error-highlight: #e0ced7;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-full: 9999px;
+  --transition-interactive: 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  --shadow-sm: 0 1px 2px oklch(0.2 0.01 80 / 0.06);
+  --shadow-md: 0 4px 12px oklch(0.2 0.01 80 / 0.08);
+  --shadow-lg: 0 12px 32px oklch(0.2 0.01 80 / 0.12);
+  --content-narrow: 640px;
+  --content-default: 960px;
+  --text-xs:   clamp(0.75rem,  0.7rem  + 0.25vw, 0.875rem);
+  --text-sm:   clamp(0.875rem, 0.8rem  + 0.35vw, 1rem);
+  --text-base: clamp(1rem,     0.95rem + 0.25vw, 1.125rem);
+  --text-lg:   clamp(1.125rem, 1rem    + 0.75vw, 1.5rem);
+  --text-xl:   clamp(1.5rem,   1.2rem  + 1.25vw, 2.25rem);
+  --text-2xl:  clamp(2rem,     1.2rem  + 2.5vw,  3.5rem);
+  --space-1:  0.25rem; --space-2:  0.5rem;  --space-3:  0.75rem; --space-4:  1rem;
+  --space-5:  1.25rem; --space-6:  1.5rem;  --space-8:  2rem;    --space-10: 2.5rem;
+  --space-12: 3rem;    --space-16: 4rem;    --space-20: 5rem;    --space-24: 6rem;
+  --font-display: 'Satoshi', 'Inter', sans-serif;
+  --font-body: 'Satoshi', 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 }
-[data-theme="dark"]{
-  --color-bg:#171614;--color-surface:#1c1b19;--color-surface-2:#201f1d;
-  --color-surface-offset:#1d1c1a;--color-surface-dynamic:#2d2c2a;
-  --color-divider:#262523;--color-border:#393836;
-  --color-text:#cdccca;--color-text-muted:#797876;--color-text-faint:#5a5957;
-  --color-primary:#4f98a3;--color-primary-hover:#227f8b;
-  --color-primary-highlight:#313b3b;
-  --color-error:#d163a7;--color-error-highlight:#4c3d46;
-  --color-success:#6daa45;
-  --color-warning:#bb653b;
-  --shadow-sm:0 1px 2px oklch(0 0 0/.2);
-  --shadow-md:0 4px 12px oklch(0 0 0/.3);
-  --shadow-lg:0 12px 32px oklch(0 0 0/.4);
+
+[data-theme="dark"] {
+  --color-bg:             #0f0f0d;
+  --color-surface:        #161614;
+  --color-surface-2:      #1c1c19;
+  --color-surface-offset: #1d1c1a;
+  --color-surface-offset-2: #222220;
+  --color-surface-dynamic: #2a2a27;
+  --color-divider:        #242422;
+  --color-border:         #333330;
+  --color-text:           #d4d3d0;
+  --color-text-muted:     #7a7976;
+  --color-text-faint:     #55544f;
+  --color-primary:        #4f98a3;
+  --color-primary-hover:  #227f8b;
+  --color-primary-active: #1a626b;
+  --color-primary-highlight: #1f3335;
+  --color-success:        #6daa45;
+  --color-success-hover:  #4d8f25;
+  --color-success-highlight: #1f3018;
+  --color-warning:        #bb653b;
+  --color-warning-highlight: #3a2a1e;
+  --color-error:          #d163a7;
+  --color-error-hover:    #b9478f;
+  --color-error-highlight: #2d1625;
+  --shadow-sm: 0 1px 2px oklch(0 0 0 / 0.25);
+  --shadow-md: 0 4px 12px oklch(0 0 0 / 0.35);
+  --shadow-lg: 0 12px 32px oklch(0 0 0 / 0.5);
 }
-@media(prefers-color-scheme:dark){:root:not([data-theme]){
-  --color-bg:#171614;--color-surface:#1c1b19;--color-surface-2:#201f1d;
-  --color-surface-offset:#1d1c1a;--color-surface-dynamic:#2d2c2a;
-  --color-divider:#262523;--color-border:#393836;
-  --color-text:#cdccca;--color-text-muted:#797876;--color-text-faint:#5a5957;
-  --color-primary:#4f98a3;--color-primary-hover:#227f8b;
-  --color-error:#d163a7;--color-success:#6daa45;--color-warning:#bb653b;
-  --shadow-sm:0 1px 2px oklch(0 0 0/.2);
-  --shadow-md:0 4px 12px oklch(0 0 0/.3);
-  --shadow-lg:0 12px 32px oklch(0 0 0/.4);
-}}
 
-/* ===== RESET ===== */
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{-webkit-font-smoothing:antialiased;scroll-behavior:smooth}
-body{min-height:100dvh;font-family:var(--font-body);font-size:var(--text-base);color:var(--color-text);background:var(--color-bg);line-height:1.6}
-img,canvas,svg{display:block;max-width:100%}
-button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
-input,select{font:inherit;color:inherit}
-a,button,[role="button"],input,select{transition:color var(--transition),background var(--transition),border-color var(--transition),box-shadow var(--transition)}
-:focus-visible{outline:2px solid var(--color-primary);outline-offset:3px;border-radius:var(--radius-sm)}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --color-bg: #0f0f0d; --color-surface: #161614; --color-surface-2: #1c1c19;
+    --color-surface-offset: #1d1c1a; --color-surface-offset-2: #222220;
+    --color-surface-dynamic: #2a2a27; --color-divider: #242422; --color-border: #333330;
+    --color-text: #d4d3d0; --color-text-muted: #7a7976; --color-text-faint: #55544f;
+    --color-primary: #4f98a3; --color-primary-hover: #227f8b; --color-primary-active: #1a626b;
+    --color-primary-highlight: #1f3335; --color-success: #6daa45; --color-success-hover: #4d8f25;
+    --color-success-highlight: #1f3018; --color-warning: #bb653b; --color-warning-highlight: #3a2a1e;
+    --color-error: #d163a7; --color-error-hover: #b9478f; --color-error-highlight: #2d1625;
+  }
+}
 
-/* ===== LAYOUT ===== */
-.app{max-width:800px;margin-inline:auto;padding:var(--space-8) var(--space-4)}
-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-8)}
-.logo{display:flex;align-items:center;gap:var(--space-3);font-weight:700;font-size:var(--text-lg)}
-.logo svg{color:var(--color-primary)}
-.theme-btn{width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-full);color:var(--color-text-muted)}
-.theme-btn:hover{color:var(--color-text);background:var(--color-surface-offset)}
+/* ==================== BASE ==================== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-font-smoothing: antialiased; scroll-behavior: smooth; scroll-padding-top: var(--space-16); }
+body { min-height: 100dvh; line-height: 1.6; font-family: var(--font-body); font-size: var(--text-base); color: var(--color-text); background-color: var(--color-bg); }
+img, video, canvas, svg { display: block; max-width: 100%; }
+input, button, textarea, select { font: inherit; color: inherit; }
+h1, h2, h3, h4 { text-wrap: balance; line-height: 1.15; }
+p, li { text-wrap: pretty; }
+button { cursor: pointer; background: none; border: none; }
+a, button, [role="button"], input, select { transition: color var(--transition-interactive), background var(--transition-interactive), border-color var(--transition-interactive), box-shadow var(--transition-interactive); }
+:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; border-radius: var(--radius-sm); }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
 
-/* ===== CARDS ===== */
-.card{background:var(--color-surface);border:1px solid oklch(from var(--color-text) l c h/.08);border-radius:var(--radius-xl);padding:var(--space-6);margin-bottom:var(--space-4);box-shadow:var(--shadow-sm)}
-.card-title{font-size:var(--text-sm);font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--color-text-muted);margin-bottom:var(--space-4)}
+/* ==================== LAYOUT ==================== */
+.app-container { display: flex; flex-direction: column; min-height: 100dvh; }
 
-/* ===== SERVER ROW ===== */
-.server-row{display:flex;gap:var(--space-2);align-items:center}
-.server-row input{flex:1;padding:var(--space-2) var(--space-3);background:var(--color-surface-offset);border:1px solid var(--color-border);border-radius:var(--radius-md)}
-.server-row input:focus{outline:none;border-color:var(--color-primary)}
-.btn{padding:var(--space-2) var(--space-4);border-radius:var(--radius-md);font-size:var(--text-sm);font-weight:500;white-space:nowrap}
-.btn-ghost{border:1px solid var(--color-border);color:var(--color-text-muted)}
-.btn-ghost:hover{border-color:var(--color-primary);color:var(--color-primary)}
-.btn-primary{background:var(--color-primary);color:#fff;border:1px solid transparent}
-.btn-primary:hover{background:var(--color-primary-hover)}
-.btn-primary:disabled{opacity:.4;cursor:not-allowed}
-.status-dot{width:8px;height:8px;border-radius:50%;background:var(--color-text-faint);flex-shrink:0;transition:background .3s}
-.status-dot.ok{background:var(--color-success)}
-.status-dot.err{background:var(--color-error)}
-.status-dot.checking{animation:pulse 1s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-#statusMsg{font-size:var(--text-xs);color:var(--color-text-muted);margin-top:var(--space-2)}
+.header {
+  position: sticky; top: 0; z-index: 100;
+  background: color-mix(in oklch, var(--color-bg) 85%, transparent);
+  backdrop-filter: blur(16px) saturate(1.4);
+  border-bottom: 1px solid var(--color-divider);
+  padding: var(--space-3) var(--space-6);
+  display: flex; align-items: center; justify-content: space-between;
+}
 
-/* ===== DROPZONE ===== */
-.dropzone{border:2px dashed var(--color-border);border-radius:var(--radius-lg);padding:var(--space-10) var(--space-8);text-align:center;cursor:pointer;transition:border-color var(--transition),background var(--transition)}
-.dropzone:hover,.dropzone.over{border-color:var(--color-primary);background:oklch(from var(--color-primary) l c h/.04)}
-.dropzone svg{margin-inline:auto;margin-bottom:var(--space-3);color:var(--color-text-faint)}
-.dropzone p{color:var(--color-text-muted);font-size:var(--text-sm)}
-.dropzone strong{color:var(--color-text)}
-.file-badge{display:inline-flex;align-items:center;gap:var(--space-2);background:var(--color-primary-highlight);color:var(--color-primary);padding:var(--space-1) var(--space-3);border-radius:var(--radius-full);font-size:var(--text-sm);font-weight:500;margin-top:var(--space-3)}
+.logo { display: flex; align-items: center; gap: var(--space-3); text-decoration: none; color: var(--color-text); }
+.logo-text { font-size: var(--text-lg); font-weight: 700; letter-spacing: -0.02em; }
+.logo-text span { color: var(--color-primary); }
 
-/* ===== PARAMS ===== */
-.params-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4)}
-@media(max-width:520px){.params-grid{grid-template-columns:1fr}}
-.param-item label{display:flex;justify-content:space-between;font-size:var(--text-sm);margin-bottom:var(--space-2)}
-.param-item label span{color:var(--color-text-muted)}
-.param-val{font-weight:600;color:var(--color-primary)}
-input[type=range]{width:100%;accent-color:var(--color-primary);height:4px;cursor:pointer}
+.header-actions { display: flex; align-items: center; gap: var(--space-3); }
 
-/* ===== WAVEFORM ===== */
-.waveform-wrap{display:none;margin-top:var(--space-6)}
-.waveform-wrap.visible{display:block}
-.wf-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-3)}
-.wf-title{font-size:var(--text-sm);font-weight:600;color:var(--color-text-muted)}
-.wf-legend{display:flex;gap:var(--space-4);font-size:var(--text-xs);color:var(--color-text-muted)}
-.wf-legend span{display:flex;align-items:center;gap:var(--space-1)}
-.dot-keep{width:8px;height:8px;border-radius:2px;background:var(--color-primary);opacity:.7}
-.dot-cut{width:8px;height:8px;border-radius:2px;background:var(--color-error);opacity:.7}
-.canvas-outer{position:relative;background:var(--color-surface-offset);border-radius:var(--radius-lg);overflow:hidden;border:1px solid oklch(from var(--color-text) l c h/.06)}
-#waveCanvas{display:block;width:100%;cursor:crosshair}
-.wf-stats{display:flex;flex-wrap:wrap;gap:var(--space-4) var(--space-6);margin-top:var(--space-3);font-size:var(--text-sm)}
-.wf-stat strong{font-weight:600}
-.analyzing-row{display:flex;align-items:center;gap:var(--space-2);font-size:var(--text-sm);color:var(--color-text-muted);padding:var(--space-3) 0}
-.spin{animation:spin .8s linear infinite;display:inline-block}
-@keyframes spin{to{transform:rotate(360deg)}}
+.btn-icon {
+  width: 36px; height: 36px; border-radius: var(--radius-md);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--color-text-muted); border: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+.btn-icon:hover { color: var(--color-text); background: var(--color-surface-offset); }
 
-/* ===== PROCESS ===== */
-.process-row{display:flex;gap:var(--space-3);align-items:center;flex-wrap:wrap}
-.progress-wrap{flex:1;min-width:160px;height:6px;background:var(--color-surface-offset);border-radius:var(--radius-full);overflow:hidden;display:none}
-.progress-bar{height:100%;background:var(--color-primary);width:0%;transition:width .3s}
-#processMsg{font-size:var(--text-sm);color:var(--color-text-muted)}
-.download-btn{display:none;gap:var(--space-2);align-items:center;padding:var(--space-3) var(--space-5);border-radius:var(--radius-lg);background:var(--color-success);color:#fff;font-weight:600;font-size:var(--text-sm)}
-.download-btn.visible{display:flex}
-.download-btn:hover{filter:brightness(1.1)}
+.main { flex: 1; padding: var(--space-8) var(--space-6); max-width: var(--content-default); margin: 0 auto; width: 100%; }
 
-/* ===== SERVER DETAILS ===== */
-.server-details{margin-bottom:var(--space-4)}
-.server-details summary{list-style:none;cursor:pointer;padding:var(--space-3) var(--space-4);background:var(--color-surface);border:1px solid oklch(from var(--color-text) l c h/.08);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm)}
-.server-details summary::-webkit-details-marker{display:none}
-.server-summary-inner{display:flex;align-items:center;gap:var(--space-2);font-size:var(--text-sm);color:var(--color-text-muted)}
-.chevron{margin-left:auto;transition:transform var(--transition);color:var(--color-text-faint)}
-.server-details[open] .chevron{transform:rotate(180deg)}
-.server-body{background:var(--color-surface);border:1px solid oklch(from var(--color-text) l c h/.08);border-top:none;border-radius:0 0 var(--radius-lg) var(--radius-lg);padding:var(--space-4);box-shadow:var(--shadow-sm)}
-.status-dot.ok ~ * {color:var(--color-success)}
+/* ==================== HERO ==================== */
+.hero { text-align: center; margin-bottom: var(--space-10); padding-top: var(--space-6); }
+.hero h1 { font-size: var(--text-2xl); font-weight: 700; letter-spacing: -0.03em; margin-bottom: var(--space-3); }
+.hero h1 span { color: var(--color-primary); }
+.hero p { font-size: var(--text-base); color: var(--color-text-muted); max-width: 52ch; margin: 0 auto; }
+
+/* ==================== PIPELINE STEPS ==================== */
+.pipeline { display: flex; align-items: center; justify-content: center; gap: var(--space-2); margin-bottom: var(--space-8); flex-wrap: wrap; }
+.pipeline-step {
+  display: flex; align-items: center; gap: var(--space-2);
+  font-size: var(--text-xs); font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;
+  color: var(--color-text-faint);
+  transition: color var(--transition-interactive);
+}
+.pipeline-step.active { color: var(--color-primary); }
+.pipeline-step.done { color: var(--color-success); }
+.step-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: currentColor; flex-shrink: 0;
+}
+.step-arrow { color: var(--color-text-faint); font-size: var(--text-xs); margin: 0 var(--space-1); }
+
+/* ==================== PANELS ==================== */
+.panel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  margin-bottom: var(--space-5);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--transition-interactive);
+}
+.panel:hover { box-shadow: var(--shadow-md); }
+.panel-title {
+  font-size: var(--text-lg); font-weight: 700; letter-spacing: -0.02em;
+  margin-bottom: var(--space-4); display: flex; align-items: center; gap: var(--space-3);
+}
+.panel-number {
+  width: 28px; height: 28px; border-radius: var(--radius-full);
+  background: var(--color-primary-highlight); color: var(--color-primary);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: var(--text-xs); font-weight: 700; flex-shrink: 0;
+}
+
+/* ==================== UPLOAD ZONE ==================== */
+.upload-zone {
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-12) var(--space-8);
+  text-align: center;
+  cursor: pointer;
+  transition: border-color var(--transition-interactive), background var(--transition-interactive);
+  position: relative;
+}
+.upload-zone:hover, .upload-zone.drag-over {
+  border-color: var(--color-primary);
+  background: var(--color-primary-highlight);
+}
+.upload-zone input[type="file"] {
+  position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+}
+.upload-icon { margin: 0 auto var(--space-4); color: var(--color-text-faint); }
+.upload-zone h3 { font-size: var(--text-base); font-weight: 600; margin-bottom: var(--space-2); }
+.upload-zone p { font-size: var(--text-sm); color: var(--color-text-muted); }
+.upload-zone .formats { margin-top: var(--space-3); display: flex; gap: var(--space-2); justify-content: center; flex-wrap: wrap; }
+.format-badge {
+  font-size: var(--text-xs); font-family: var(--font-mono);
+  background: var(--color-surface-offset); border: 1px solid var(--color-border);
+  border-radius: var(--radius-full); padding: 2px var(--space-3);
+  color: var(--color-text-muted); font-weight: 500;
+}
+
+/* ==================== FILE INFO ==================== */
+.file-info {
+  display: none; align-items: center; gap: var(--space-4);
+  padding: var(--space-4); background: var(--color-surface-2);
+  border: 1px solid var(--color-border); border-radius: var(--radius-lg);
+  margin-top: var(--space-4);
+}
+.file-info.visible { display: flex; }
+.file-icon { color: var(--color-primary); flex-shrink: 0; }
+.file-details { flex: 1; min-width: 0; }
+.file-name { font-size: var(--text-sm); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.file-meta { font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 2px; }
+.btn-clear { color: var(--color-text-muted); padding: var(--space-2); border-radius: var(--radius-md); }
+.btn-clear:hover { color: var(--color-error); background: var(--color-error-highlight); }
+
+/* ==================== SETTINGS GRID ==================== */
+.settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-5); }
+@media (max-width: 600px) { .settings-grid { grid-template-columns: 1fr; } }
+
+.form-field { display: flex; flex-direction: column; gap: var(--space-2); }
+.form-label { font-size: var(--text-sm); font-weight: 600; color: var(--color-text); display: flex; align-items: center; gap: var(--space-2); }
+.form-label .hint { font-weight: 400; color: var(--color-text-muted); font-size: var(--text-xs); }
+.form-input, .form-select {
+  width: 100%; padding: var(--space-3) var(--space-4);
+  background: var(--color-surface-2); border: 1px solid var(--color-border);
+  border-radius: var(--radius-md); font-size: var(--text-sm); color: var(--color-text);
+  transition: border-color var(--transition-interactive), box-shadow var(--transition-interactive);
+}
+.form-input:focus, .form-select:focus {
+  outline: none; border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--color-primary) 20%, transparent);
+}
+.form-input:hover, .form-select:hover { border-color: var(--color-text-faint); }
+
+.range-wrapper { display: flex; flex-direction: column; gap: var(--space-2); }
+.range-with-value { display: flex; align-items: center; gap: var(--space-3); }
+.form-range { flex: 1; -webkit-appearance: none; appearance: none; height: 6px; border-radius: var(--radius-full); background: var(--color-surface-offset-2); outline: none; }
+.form-range::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%;
+  background: var(--color-primary); cursor: pointer; border: 2px solid var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  transition: background var(--transition-interactive), transform var(--transition-interactive);
+}
+.form-range::-webkit-slider-thumb:hover { background: var(--color-primary-hover); transform: scale(1.15); }
+.range-value {
+  min-width: 54px; text-align: center; font-size: var(--text-xs); font-family: var(--font-mono);
+  font-weight: 600; padding: var(--space-1) var(--space-3);
+  background: var(--color-surface-offset); border: 1px solid var(--color-border);
+  border-radius: var(--radius-full); color: var(--color-primary);
+}
+
+.field-desc { font-size: var(--text-xs); color: var(--color-text-muted); line-height: 1.5; }
+
+/* ==================== TOGGLE ==================== */
+.toggle-field { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); }
+.toggle-label { display: flex; flex-direction: column; gap: 2px; }
+.toggle-label span { font-size: var(--text-sm); font-weight: 600; }
+.toggle-label small { font-size: var(--text-xs); color: var(--color-text-muted); }
+.toggle {
+  position: relative; width: 44px; height: 24px; flex-shrink: 0;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+.toggle-track {
+  position: absolute; inset: 0; border-radius: var(--radius-full);
+  background: var(--color-surface-dynamic); border: 1px solid var(--color-border);
+  transition: background var(--transition-interactive), border-color var(--transition-interactive);
+}
+.toggle input:checked + .toggle-track { background: var(--color-primary); border-color: var(--color-primary); }
+.toggle-thumb {
+  position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%;
+  background: var(--color-text); transition: left var(--transition-interactive), background var(--transition-interactive);
+  pointer-events: none;
+}
+.toggle input:checked ~ .toggle-thumb { left: 23px; background: #fff; }
+
+/* ==================== WAVEFORM ==================== */
+.waveform-container {
+  display: none; flex-direction: column; gap: var(--space-3); margin-top: var(--space-4);
+  padding: var(--space-4); background: var(--color-surface-2); border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+.waveform-container.visible { display: flex; }
+.waveform-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-2); }
+.waveform-label { font-size: var(--text-xs); font-weight: 600; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.waveform-time-display {
+  font-size: var(--text-xs); font-family: var(--font-mono); font-weight: 600;
+  color: var(--color-primary); padding: 2px var(--space-3);
+  background: var(--color-primary-highlight); border-radius: var(--radius-full);
+  min-width: 80px; text-align: center;
+}
+.waveform-canvas-wrap {
+  position: relative; width: 100%; border-radius: var(--radius-md); overflow: hidden;
+  background: var(--color-bg); cursor: crosshair;
+  box-shadow: inset 0 1px 4px oklch(0 0 0 / 0.06);
+}
+#waveform-canvas { width: 100%; height: 120px; display: block; }
+#waveform-overlay { position: absolute; inset: 0; pointer-events: none; }
+.waveform-playhead {
+  position: absolute; top: 0; bottom: 0; width: 2px;
+  background: var(--color-text); opacity: 0.6; pointer-events: none;
+  display: none;
+}
+.waveform-tooltip {
+  position: absolute; top: 4px; transform: translateX(-50%);
+  background: var(--color-text); color: var(--color-bg);
+  font-size: 10px; font-family: var(--font-mono); font-weight: 600;
+  padding: 2px 7px; border-radius: var(--radius-full);
+  pointer-events: none; white-space: nowrap; display: none;
+}
+.waveform-stats {
+  display: flex; gap: var(--space-4); flex-wrap: wrap;
+}
+.waveform-stat {
+  display: flex; flex-direction: column; gap: 2px;
+}
+.waveform-stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-text-faint); font-weight: 600; }
+.waveform-stat-val { font-size: var(--text-xs); font-family: var(--font-mono); font-weight: 700; color: var(--color-text-muted); }
+.waveform-stat-val.keep { color: var(--color-warning); }
+.waveform-stat-val.cut { color: var(--color-error); }
+.waveform-stat-val.sound { color: var(--color-primary); }
+.waveform-legend { display: flex; gap: var(--space-5); flex-wrap: wrap; }
+.legend-item { display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-xs); color: var(--color-text-muted); }
+.legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+/* ==================== PROCESS BUTTON ==================== */
+.btn-primary {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-3);
+  padding: var(--space-4) var(--space-8); font-size: var(--text-base); font-weight: 700;
+  background: var(--color-primary); color: #fff; border-radius: var(--radius-lg);
+  transition: background var(--transition-interactive), transform var(--transition-interactive), box-shadow var(--transition-interactive);
+  width: 100%; letter-spacing: -0.01em;
+}
+.btn-primary:hover:not(:disabled) { background: var(--color-primary-hover); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.btn-primary:active:not(:disabled) { background: var(--color-primary-active); transform: translateY(0); }
+.btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.btn-secondary {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-3);
+  padding: var(--space-3) var(--space-6); font-size: var(--text-sm); font-weight: 600;
+  background: var(--color-surface-offset); color: var(--color-text);
+  border: 1px solid var(--color-border); border-radius: var(--radius-md);
+  transition: background var(--transition-interactive);
+}
+.btn-secondary:hover { background: var(--color-surface-dynamic); }
+
+/* ==================== PROGRESS ==================== */
+.progress-panel {
+  display: none; flex-direction: column; gap: var(--space-4);
+  padding: var(--space-6); background: var(--color-surface);
+  border: 1px solid var(--color-border); border-radius: var(--radius-xl);
+  margin-bottom: var(--space-5); box-shadow: var(--shadow-sm);
+}
+.progress-panel.visible { display: flex; }
+.progress-header { display: flex; align-items: center; justify-content: space-between; }
+.progress-title { font-size: var(--text-base); font-weight: 700; }
+.progress-pct { font-size: var(--text-sm); font-family: var(--font-mono); font-weight: 600; color: var(--color-primary); }
+.progress-bar-track {
+  height: 6px; border-radius: var(--radius-full);
+  background: var(--color-surface-dynamic); overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%; border-radius: var(--radius-full);
+  background: linear-gradient(90deg in oklch, var(--color-primary), color-mix(in oklch, var(--color-primary) 70%, var(--color-success)));
+  transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  width: 0%;
+}
+.progress-log {
+  max-height: 160px; overflow-y: auto; display: flex; flex-direction: column; gap: var(--space-1);
+  padding: var(--space-3); background: var(--color-bg); border: 1px solid var(--color-divider); border-radius: var(--radius-md);
+  scrollbar-width: thin; scrollbar-color: var(--color-border) transparent;
+}
+.log-line { font-size: var(--text-xs); font-family: var(--font-mono); color: var(--color-text-muted); line-height: 1.7; }
+.log-line.success { color: var(--color-success); }
+.log-line.warn { color: var(--color-warning); }
+.log-line.error { color: var(--color-error); }
+.log-line .ts { color: var(--color-text-faint); margin-right: var(--space-2); }
+
+/* ==================== RESULT ==================== */
+.result-panel {
+  display: none; flex-direction: column; gap: var(--space-5);
+  padding: var(--space-6); background: var(--color-surface);
+  border: 1px solid var(--color-border); border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+}
+.result-panel.visible { display: flex; }
+.result-header { display: flex; align-items: center; gap: var(--space-3); }
+.success-badge {
+  width: 36px; height: 36px; border-radius: var(--radius-full);
+  background: var(--color-success-highlight); color: var(--color-success);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.result-title { font-size: var(--text-lg); font-weight: 700; letter-spacing: -0.02em; }
+.result-subtitle { font-size: var(--text-sm); color: var(--color-text-muted); }
+
+.stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-4); }
+@media (max-width: 500px) { .stats-grid { grid-template-columns: 1fr 1fr; } }
+.stat-card {
+  padding: var(--space-4); background: var(--color-surface-2);
+  border: 1px solid var(--color-border); border-radius: var(--radius-lg);
+  display: flex; flex-direction: column; gap: var(--space-1);
+}
+.stat-label { font-size: var(--text-xs); color: var(--color-text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+.stat-value { font-size: var(--text-xl); font-weight: 700; letter-spacing: -0.03em; font-family: var(--font-mono); color: var(--color-text); }
+.stat-unit { font-size: var(--text-xs); color: var(--color-text-muted); }
+.stat-card.highlight .stat-value { color: var(--color-success); }
+
+.video-preview { width: 100%; border-radius: var(--radius-lg); overflow: hidden; background: #000; }
+.video-preview video { width: 100%; max-height: 360px; display: block; }
+
+.result-actions { display: flex; gap: var(--space-3); flex-wrap: wrap; }
+.btn-download {
+  flex: 1; min-width: 200px; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-3);
+  padding: var(--space-4) var(--space-6); font-size: var(--text-sm); font-weight: 700;
+  background: var(--color-success); color: #fff; border-radius: var(--radius-lg);
+  transition: background var(--transition-interactive), transform var(--transition-interactive);
+}
+.btn-download:hover { background: var(--color-success-hover); transform: translateY(-1px); }
+.btn-restart { flex: 0; }
+
+/* ==================== NOTIFICATION ==================== */
+.notification {
+  display: none; align-items: flex-start; gap: var(--space-3);
+  padding: var(--space-4); border-radius: var(--radius-lg);
+  margin-bottom: var(--space-5); animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes slideDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+.notification.visible { display: flex; }
+.notification.error { background: var(--color-error-highlight); border: 1px solid color-mix(in oklch, var(--color-error) 30%, transparent); color: var(--color-error); }
+.notification.warn { background: var(--color-warning-highlight); border: 1px solid color-mix(in oklch, var(--color-warning) 30%, transparent); color: var(--color-warning); }
+.notif-icon { flex-shrink: 0; margin-top: 2px; }
+.notif-body { font-size: var(--text-sm); line-height: 1.5; }
+.notif-body strong { display: block; font-weight: 700; margin-bottom: 2px; }
+
+/* ==================== INFO ACCORDION ==================== */
+.info-section { margin-top: var(--space-8); }
+.accordion-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--space-4) 0; cursor: pointer; user-select: none;
+  border-top: 1px solid var(--color-divider); color: var(--color-text-muted);
+  font-size: var(--text-sm); font-weight: 600;
+}
+.accordion-header:hover { color: var(--color-text); }
+.accordion-chevron { transition: transform var(--transition-interactive); }
+.accordion-header.open .accordion-chevron { transform: rotate(180deg); }
+.accordion-body { overflow: hidden; max-height: 0; transition: max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
+.accordion-body.open { max-height: 800px; }
+.accordion-content { padding-bottom: var(--space-5); }
+
+.install-block {
+  background: var(--color-bg); border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg); padding: var(--space-4); margin: var(--space-3) 0;
+}
+.install-block pre {
+  font-family: var(--font-mono); font-size: var(--text-xs);
+  color: var(--color-text-muted); white-space: pre-wrap; word-break: break-word; line-height: 1.8;
+}
+.install-block pre .cmd { color: var(--color-primary); }
+.install-block pre .comment { color: var(--color-text-faint); }
+
+.how-list { display: flex; flex-direction: column; gap: var(--space-3); margin-top: var(--space-3); }
+.how-item { display: flex; gap: var(--space-3); align-items: flex-start; font-size: var(--text-sm); color: var(--color-text-muted); }
+.how-num { min-width: 22px; height: 22px; border-radius: var(--radius-full); background: var(--color-primary-highlight); color: var(--color-primary); font-size: var(--text-xs); font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+
+.footer { padding: var(--space-8) var(--space-6); text-align: center; font-size: var(--text-xs); color: var(--color-text-faint); border-top: 1px solid var(--color-divider); }
 </style>
 </head>
 <body>
-<div class="app">
-  <header>
-    <div class="logo">
-      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-label="SilenceCut">
-        <rect x="2" y="10" width="4" height="8" rx="1" fill="currentColor" opacity=".4"/>
-        <rect x="8" y="5" width="4" height="18" rx="1" fill="currentColor" opacity=".6"/>
-        <rect x="14" y="8" width="4" height="12" rx="1" fill="currentColor"/>
-        <rect x="20" y="11" width="4" height="6" rx="1" fill="currentColor" opacity=".4"/>
-        <line x1="1" y1="26" x2="27" y2="2" stroke="var(--color-error)" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="3 2"/>
+<div class="app-container">
+
+<!-- HEADER -->
+<header class="header">
+  <a href="#" class="logo">
+    <svg aria-label="SilenceCut logo" width="28" height="28" viewBox="0 0 28 28" fill="none">
+      <rect x="2" y="2" width="24" height="24" rx="7" fill="var(--color-primary)" opacity="0.15"/>
+      <rect x="2" y="2" width="24" height="24" rx="7" stroke="var(--color-primary)" stroke-width="1.5"/>
+      <rect x="6" y="10" width="3" height="8" rx="1.5" fill="var(--color-primary)"/>
+      <rect x="11" y="7" width="3" height="14" rx="1.5" fill="var(--color-primary)"/>
+      <rect x="16" y="12" width="3" height="4" rx="1.5" fill="var(--color-text-faint)"/>
+      <line x1="19.5" y1="10" x2="24.5" y2="18" stroke="var(--color-error)" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="24.5" y1="10" x2="19.5" y2="18" stroke="var(--color-error)" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Silence<span>Cut</span></span>
+  </a>
+  <div class="header-actions">
+    <button class="btn-icon" data-theme-toggle aria-label="Переключить тему">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </div>
+</header>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- HERO -->
+  <div class="hero">
+    <h1>Автоматически вырезает <span>тишину</span> из видео</h1>
+    <p>Загрузите видео, настройте параметры обнаружения тишины — и получите готовый монтаж прямо в браузере.</p>
+  </div>
+
+  <!-- PIPELINE -->
+  <div class="pipeline" id="pipeline">
+    <div class="pipeline-step active" id="step-upload">
+      <div class="step-dot"></div>
+      Загрузка
+    </div>
+    <div class="step-arrow">›</div>
+    <div class="pipeline-step" id="step-settings">
+      <div class="step-dot"></div>
+      Настройки
+    </div>
+    <div class="step-arrow">›</div>
+    <div class="pipeline-step" id="step-process">
+      <div class="step-dot"></div>
+      Обработка
+    </div>
+    <div class="step-arrow">›</div>
+    <div class="pipeline-step" id="step-result">
+      <div class="step-dot"></div>
+      Результат
+    </div>
+  </div>
+
+  <!-- NOTIFICATION -->
+  <div class="notification" id="notification" role="alert">
+    <div class="notif-icon" id="notif-icon"></div>
+    <div class="notif-body" id="notif-body"></div>
+  </div>
+
+  <!-- STEP 1: UPLOAD -->
+  <div class="panel" id="panel-upload">
+    <div class="panel-title">
+      <span class="panel-number">1</span>
+      Выберите видеофайл
+    </div>
+    <div class="upload-zone" id="dropzone">
+      <input type="file" id="video-input" accept="video/*" aria-label="Выберите видеофайл">
+      <svg class="upload-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="17 8 12 3 7 8"/>
+        <line x1="12" y1="3" x2="12" y2="15"/>
       </svg>
-      SilenceCut
-    </div>
-    <button class="theme-btn" data-theme-toggle aria-label="Переключить тему">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-    </button>
-  </header>
-
-  <!-- SERVER -->
-  <details class="server-details">
-    <summary>
-      <span class="server-summary-inner">
-        <span class="status-dot" id="serverDot"></span>
-        <span id="serverSummaryText">Сервер не настроен</span>
-        <svg class="chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-      </span>
-    </summary>
-    <div class="server-body">
-      <div class="server-row">
-        <input type="url" id="serverUrl" placeholder="https://xxx.up.railway.app" value="">
-        <button class="btn btn-ghost" onclick="checkServer()">Проверить</button>
-      </div>
-      <div id="statusMsg" style="margin-top:var(--space-2);font-size:var(--text-xs);color:var(--color-text-muted)">Укажите URL Railway-сервера</div>
-    </div>
-  </details>
-
-  <!-- UPLOAD -->
-  <div class="card">
-    <div class="card-title">Видео</div>
-    <div class="dropzone" id="dropzone" onclick="fileInput.click()" ondragover="e=>{e.preventDefault();this.classList.add('over')}" ondragleave="this.classList.remove('over')" ondrop="onDrop(event)">
-      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-      <p><strong>Перетащите видео</strong> или кликните для выбора</p>
-      <p>MP4, MOV, AVI, MKV — до 2 ГБ</p>
-      <div id="fileBadge" style="display:none" class="file-badge">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-        <span id="fileName">—</span>
+      <h3>Перетащите видео сюда или нажмите для выбора</h3>
+      <p>Обработка происходит полностью в браузере — файл никуда не отправляется</p>
+      <div class="formats">
+        <span class="format-badge">MP4</span>
+        <span class="format-badge">WebM</span>
+        <span class="format-badge">MOV</span>
+        <span class="format-badge">AVI</span>
+        <span class="format-badge">MKV</span>
       </div>
     </div>
-    <input type="file" id="fileInput" accept="video/*,audio/*" style="display:none" onchange="onFileSelect(this.files[0])">
+    <div class="file-info" id="file-info">
+      <div class="file-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="23 7 16 1 1 1 1 23 23 23 23 7"/>
+          <polyline points="16 1 16 7 23 7"/>
+        </svg>
+      </div>
+      <div class="file-details">
+        <div class="file-name" id="file-name-display">—</div>
+        <div class="file-meta" id="file-meta-display">—</div>
+      </div>
+      <button class="btn-clear" id="btn-clear" aria-label="Удалить файл">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <!-- Hidden video element for analysis -->
+    <video id="source-video" style="display:none" crossorigin="anonymous"></video>
   </div>
 
-  <!-- PARAMS -->
-  <div class="card">
-    <div class="card-title">Параметры</div>
-    <div class="params-grid">
-      <div class="param-item">
-        <label>Порог громкости <span><span class="param-val" id="threshVal">-40</span> dB</span></label>
-        <input type="range" id="threshold" min="-70" max="-20" step="1" value="-40"
-          oninput="threshVal.textContent=this.value; onSliderChange('analyze')">
+  <!-- STEP 2: SETTINGS -->
+  <div class="panel" id="panel-settings">
+    <div class="panel-title">
+      <span class="panel-number">2</span>
+      Параметры обнаружения тишины
+    </div>
+    <div class="settings-grid">
+      <!-- Threshold -->
+      <div class="form-field">
+        <label class="form-label">
+          Порог громкости
+          <span class="hint">dB</span>
+        </label>
+        <div class="range-wrapper">
+          <div class="range-with-value">
+            <input type="range" class="form-range" id="threshold" min="-80" max="-10" step="1" value="-40">
+            <div class="range-value" id="threshold-val">-40 dB</div>
+          </div>
+        </div>
+        <p class="field-desc">Уровень ниже которого аудио считается тишиной. -40 dB рекомендуется для большинства видео.</p>
       </div>
-      <div class="param-item">
-        <label>Мин. тишина <span><span class="param-val" id="silenceVal">0.5</span> с</span></label>
-        <input type="range" id="minSilence" min="0.1" max="3" step="0.1" value="0.5"
-          oninput="silenceVal.textContent=this.value; onSliderChange('analyze')">
+
+      <!-- Min silence duration -->
+      <div class="form-field">
+        <label class="form-label">
+          Мин. длина тишины
+          <span class="hint">сек</span>
+        </label>
+        <div class="range-wrapper">
+          <div class="range-with-value">
+            <input type="range" class="form-range" id="min-silence" min="0.1" max="5" step="0.1" value="0.5">
+            <div class="range-value" id="min-silence-val">0.5 с</div>
+          </div>
+        </div>
+        <p class="field-desc">Минимальная продолжительность паузы, которая будет вырезана. Короче — и паузы в речи тоже удалятся.</p>
       </div>
-      <div class="param-item">
-        <label>Отступ (pad) <span><span class="param-val" id="padVal">0.1</span> с</span></label>
-        <input type="range" id="pad" min="0" max="0.5" step="0.01" value="0.1"
-          oninput="padVal.textContent=(+this.value).toFixed(2); onSliderChange('redraw')">
+
+      <!-- Padding before -->
+      <div class="form-field">
+        <label class="form-label">
+          Отступ до слова
+          <span class="hint">сек</span>
+        </label>
+        <div class="range-wrapper">
+          <div class="range-with-value">
+            <input type="range" class="form-range" id="pad-before" min="0" max="1" step="0.05" value="0.1">
+            <div class="range-value" id="pad-before-val">0.10 с</div>
+          </div>
+        </div>
+        <p class="field-desc">Оставить небольшую паузу перед началом звука, чтобы монтаж звучал естественно.</p>
       </div>
-      <div class="param-item">
-        <label>Макс. тишина <span><span class="param-val" id="keepVal">0.5</span> с</span></label>
-        <input type="range" id="maxKeep" min="0" max="2" step="0.1" value="0.5"
-          oninput="keepVal.textContent=this.value; onSliderChange('redraw')">
+
+      <!-- Padding after -->
+      <div class="form-field">
+        <label class="form-label">
+          Отступ после слова
+          <span class="hint">сек</span>
+        </label>
+        <div class="range-wrapper">
+          <div class="range-with-value">
+            <input type="range" class="form-range" id="pad-after" min="0" max="1" step="0.05" value="0.1">
+            <div class="range-value" id="pad-after-val">0.10 с</div>
+          </div>
+        </div>
+        <p class="field-desc">Небольшой «хвост» после конца звука — предотвращает обрыв на полуслове.</p>
       </div>
+
+      <!-- Max silence kept -->
+      <div class="form-field">
+        <label class="form-label">
+          Оставить тишины макс.
+          <span class="hint">сек</span>
+        </label>
+        <div class="range-wrapper">
+          <div class="range-with-value">
+            <input type="range" class="form-range" id="max-keep" min="0" max="3" step="0.1" value="0.5">
+            <div class="range-value" id="max-keep-val">0.5 с</div>
+          </div>
+        </div>
+        <p class="field-desc">Длинные паузы заменяются коротким промежутком вместо полного удаления — монтаж дышит.</p>
+      </div>
+
+      <!-- Smoothing -->
+      <div class="form-field">
+        <label class="form-label">
+          Сглаживание
+          <span class="hint">сек</span>
+        </label>
+        <div class="range-wrapper">
+          <div class="range-with-value">
+            <input type="range" class="form-range" id="smoothing" min="0" max="0.5" step="0.01" value="0.05">
+            <div class="range-value" id="smoothing-val">0.05 с</div>
+          </div>
+        </div>
+        <p class="field-desc">Объединяет соседние тихие участки. Убирает «мерцание» при словах с паузами внутри.</p>
+      </div>
+    </div>
+
+    <!-- Toggles -->
+    <div style="margin-top: var(--space-5); display: flex; flex-direction: column; gap: var(--space-4); border-top: 1px solid var(--color-divider); padding-top: var(--space-5);">
+      <div class="toggle-field">
+        <div class="toggle-label">
+          <span>Показать визуализацию аудио</span>
+          <small>Waveform + тихие участки перед обработкой</small>
+        </div>
+        <label class="toggle" for="show-wave">
+          <input type="checkbox" id="show-wave" checked>
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+    </div>
+
+    <!-- Waveform -->
+    <div class="waveform-container" id="waveform-container">
+      <div class="waveform-header">
+        <div class="waveform-label">Интерактивная аудиовизуализация</div>
+        <div class="waveform-time-display" id="waveform-time">—</div>
+      </div>
+      <div class="waveform-canvas-wrap" id="waveform-wrap">
+        <canvas id="waveform-canvas" height="120" aria-label="Визуализация аудио"></canvas>
+        <canvas id="waveform-overlay" height="120" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
+        <div class="waveform-playhead" id="waveform-playhead"></div>
+        <div class="waveform-tooltip" id="waveform-tooltip"></div>
+      </div>
+      <div style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:var(--space-4);">
+        <div class="waveform-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--color-primary)"></div> Звук (сохраняется)</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--color-warning);opacity:0.8"></div> Тишина (≤ макс., сохраняется)</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--color-surface-dynamic)"></div> Тишина (вырезается)</div>
+        </div>
+        <div class="waveform-stats" id="waveform-stats"></div>
+      </div>
+    </div>
+
+  <!-- PROCESS BUTTON -->
+  <button class="btn-primary" id="btn-process" disabled>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <polygon points="5 3 19 12 5 21 5 3"/>
+    </svg>
+    Вырезать тишину и создать видео
+  </button>
+
+  <!-- PROGRESS -->
+  <div class="progress-panel" id="progress-panel">
+    <div class="progress-header">
+      <div class="progress-title" id="progress-title">Анализ аудио...</div>
+      <div class="progress-pct" id="progress-pct">0%</div>
+    </div>
+    <div class="progress-bar-track">
+      <div class="progress-bar-fill" id="progress-bar"></div>
+    </div>
+    <div class="progress-log" id="progress-log"></div>
+  </div>
+
+  <!-- RESULT -->
+  <div class="result-panel" id="result-panel">
+    <div class="result-header">
+      <div class="success-badge">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div>
+        <div class="result-title">Видео готово!</div>
+        <div class="result-subtitle" id="result-subtitle">Тишина успешно вырезана</div>
+      </div>
+    </div>
+
+    <div class="stats-grid" id="stats-grid"></div>
+
+    <div class="video-preview" id="video-preview"></div>
+
+    <div class="result-actions">
+      <button class="btn-download" id="btn-download">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Скачать обработанное видео
+      </button>
+      <button class="btn-secondary btn-restart" id="btn-restart">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="1 4 1 10 7 10"/>
+          <path d="M3.51 15a9 9 0 1 0 .49-4"/>
+        </svg>
+        Новое видео
+      </button>
     </div>
   </div>
 
-  <!-- WAVEFORM -->
-  <div class="card">
-    <div class="card-title">Анализ звуковой дорожки</div>
-
-    <!-- Кнопка анализа -->
-    <button class="btn btn-ghost" id="analyzeBtn" disabled onclick="runAnalyze()" style="margin-bottom:var(--space-4)">
-      ▶ Анализировать
-    </button>
-
-    <!-- Пока идёт анализ -->
-    <div id="analyzingRow" class="analyzing-row" style="display:none">
-      <span class="spin">⟳</span> Анализируем звук...
-    </div>
-
-    <!-- Waveform (появляется после анализа) -->
-    <div class="waveform-wrap" id="waveformWrap">
-      <div class="wf-header">
-        <div class="wf-title">Звуковая дорожка</div>
-        <div class="wf-legend">
-          <span><span class="dot-keep"></span>остаётся</span>
-          <span><span class="dot-cut"></span>вырезается</span>
+  <!-- INFO SECTION -->
+  <div class="info-section">
+    <div>
+      <div class="accordion-header" id="acc-how">
+        Как это работает?
+        <svg class="accordion-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="accordion-body" id="acc-how-body">
+        <div class="accordion-content">
+          <div class="how-list">
+            <div class="how-item"><span class="how-num">1</span><span><strong>Декодирование аудио</strong> — браузер декодирует звуковую дорожку через Web Audio API (AudioContext.decodeAudioData) без обращения к серверу.</span></div>
+            <div class="how-item"><span class="how-num">2</span><span><strong>Анализ RMS</strong> — видео разбивается на маленькие окна (~20 мс), для каждого вычисляется среднеквадратическое значение (RMS) громкости в дБ.</span></div>
+            <div class="how-item"><span class="how-num">3</span><span><strong>Маркировка участков</strong> — окна ниже порога помечаются как «тишина». Соседние тихие окна объединяются с учётом параметра «Сглаживание».</span></div>
+            <div class="how-item"><span class="how-num">4</span><span><strong>Монтаж через MediaRecorder</strong> — исходный &lt;video&gt; ускоренно проигрывается, активные сегменты захватываются через canvas + MediaRecorder API. Тишина пропускается.</span></div>
+            <div class="how-item"><span class="how-num">5</span><span><strong>Сборка WebM/MP4</strong> — результирующие чанки собираются в Blob, который можно скачать напрямую из браузера.</span></div>
+          </div>
         </div>
       </div>
-      <div class="canvas-outer">
-        <canvas id="waveCanvas" height="140"></canvas>
+    </div>
+    <div>
+      <div class="accordion-header" id="acc-limits">
+        Ограничения браузера
+        <svg class="accordion-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
       </div>
-      <div class="wf-stats" id="wfStats"></div>
+      <div class="accordion-body" id="acc-limits-body">
+        <div class="accordion-content" style="font-size: var(--text-sm); color: var(--color-text-muted); display: flex; flex-direction: column; gap: var(--space-3);">
+          <p>⚠️ <strong>Формат выхода — WebM</strong> (видео + аудио через MediaRecorder). Это ограничение браузерного API; перекодирование в MP4 без сервера невозможно.</p>
+          <p>⚠️ <strong>Большие файлы (>500 МБ)</strong> могут замедлять работу из-за ограничений оперативной памяти вкладки. Для профессиональных нужд рекомендуется использовать Python-скрипт ниже.</p>
+          <p>⚠️ <strong>Некоторые форматы кодеков</strong> (H.265/HEVC, некоторые MOV) могут не поддерживаться — зависит от браузера и ОС.</p>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="accordion-header" id="acc-python">
+        Python-скрипт (для продвинутых)
+        <svg class="accordion-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="accordion-body" id="acc-python-body">
+        <div class="accordion-content" style="font-size: var(--text-sm); color: var(--color-text-muted);">
+          <p style="margin-bottom: var(--space-3);">Для обработки больших файлов, сохранения оригинального кодека и полного контроля над форматом используйте скрипт на Python с <code style="font-family: var(--font-mono); background: var(--color-surface-offset); padding: 1px 6px; border-radius: 4px;">moviepy</code> и <code style="font-family: var(--font-mono); background: var(--color-surface-offset); padding: 1px 6px; border-radius: 4px;">librosa</code>:</p>
+          <div class="install-block">
+            <pre><span class="comment"># Установка зависимостей</span>
+<span class="cmd">pip install moviepy librosa soundfile numpy</span>
+
+<span class="comment"># Запуск</span>
+<span class="cmd">python silence_cut.py input.mp4 output.mp4 --threshold -40 --min-silence 0.5 --pad 0.1</span></pre>
+          </div>
+          <div class="install-block">
+            <pre><span class="comment">"""
+silence_cut.py — Вырезатель тишины
+Использование: python silence_cut.py input.mp4 output.mp4 [опции]
+"""</span>
+
+<span class="cmd">import argparse, numpy as np, librosa
+from moviepy.editor import VideoFileClip, concatenate_videoclips</span>
+
+def detect_silence(audio, sr, threshold_db, min_silence_sec, smooth_sec, pad_before, pad_after, max_keep):
+    frame_len = int(sr * 0.02)
+    hop_len = frame_len // 2
+    rms = librosa.feature.rms(y=audio, frame_length=frame_len, hop_length=hop_len)[0]
+    rms_db = 20 * np.log10(rms + 1e-9)
+    times = librosa.frames_to_time(np.arange(len(rms_db)), sr=sr, hop_length=hop_len)
+    is_silent = rms_db &lt; threshold_db
+
+    # Сглаживание
+    smooth_frames = int(smooth_sec / (hop_len / sr))
+    from scipy.ndimage import uniform_filter1d
+    is_silent = uniform_filter1d(is_silent.astype(float), size=smooth_frames) &gt; 0.5
+
+    # Группировка
+    segments, active, start = [], False, 0.0
+    for i, silent in enumerate(is_silent):
+        t = times[i]
+        if not silent and not active:
+            active = True; start = max(0, t - pad_before)
+        elif silent and active:
+            end = min(times[-1], t + pad_after)
+            segments.append((start, end)); active = False
+    if active:
+        segments.append((start, times[-1]))
+
+    # Объединение близких сегментов
+    merged = []
+    for s, e in segments:
+        if merged and s - merged[-1][1] &lt;= max_keep:
+            merged[-1] = (merged[-1][0], max(merged[-1][1], e))
+        else:
+            if merged and s - merged[-1][1] &gt; max_keep:
+                merged.append((merged[-1][1], merged[-1][1] + max_keep))
+            merged.append((s, e))
+    return merged
+
+def cut_silence(input_path, output_path, threshold=-40, min_silence=0.5,
+                smooth=0.05, pad_before=0.1, pad_after=0.1, max_keep=0.5):
+    video = VideoFileClip(input_path)
+    audio_arr, sr = librosa.load(input_path, sr=None, mono=True)
+    segments = detect_silence(audio_arr, sr, threshold, min_silence, smooth, pad_before, pad_after, max_keep)
+    clips = [video.subclip(s, e) for s, e in segments if e - s &gt; 0.05]
+    if not clips:
+        print("Ошибка: не найдено ни одного активного сегмента!")
+        return
+    final = concatenate_videoclips(clips)
+    final.write_videofile(output_path, codec="libx264", audio_codec="aac")
+    removed = video.duration - final.duration
+    print(f"Готово! Удалено {removed:.1f}с из {video.duration:.1f}с ({removed/video.duration*100:.1f}%)")
+
+if __name__ == "__main__":
+    p = argparse.ArgumentParser()
+    p.add_argument("input"); p.add_argument("output")
+    p.add_argument("--threshold", type=float, default=-40)
+    p.add_argument("--min-silence", type=float, default=0.5)
+    p.add_argument("--pad", type=float, default=0.1)
+    p.add_argument("--max-keep", type=float, default=0.5)
+    args = p.parse_args()
+    cut_silence(args.input, args.output, args.threshold, args.min_silence,
+                pad_before=args.pad, pad_after=args.pad, max_keep=args.max_keep)</pre>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- PROCESS -->
-  <div class="card">
-    <div class="card-title">Экспорт MP4</div>
-    <div class="process-row">
-      <button class="btn btn-primary" id="processBtn" disabled onclick="runProcess()">
-        Вырезать тишину → MP4
-      </button>
-      <div class="progress-wrap" id="progressWrap">
-        <div class="progress-bar" id="progressBar"></div>
-      </div>
-    </div>
-    <div id="processMsg" style="margin-top:var(--space-3)"></div>
-    <a id="downloadBtn" class="download-btn" download="output.mp4">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      Скачать MP4
-    </a>
-  </div>
-</div>
+</main>
+
+<footer class="footer">
+  SilenceCut — обработка происходит локально в браузере. Файлы не передаются на сервер.
+</footer>
+
+</div><!-- .app-container -->
 
 <script>
-// ===== STATE =====
-let selectedFile = null;
-let serverOk = false;
-let wfSamples = null;     // Float32Array — амплитуды
-let wfDuration = 0;       // секунды
-let wfRawSilence = null;  // [{start,end}] — с сервера
-let hoverT = -1;          // секунды под курсором
-let debounceAnalyze = null;
-let debounceRedraw  = null;
-
-// ===== THEME TOGGLE =====
+// ============================
+// THEME TOGGLE
+// ============================
 (function(){
-  const btn = document.querySelector('[data-theme-toggle]');
-  const html = document.documentElement;
-  const setTheme = t => {
-    html.setAttribute('data-theme', t);
-    btn.innerHTML = t === 'dark'
-      ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>'
-      : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>';
-    if (wfSamples) requestAnimationFrame(drawWave);
-  };
+  const t = document.querySelector('[data-theme-toggle]');
+  const r = document.documentElement;
   let d = matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light';
-  setTheme(d);
-  btn.addEventListener('click', () => setTheme(d === 'dark' ? (d='light') : (d='dark')));
+  r.setAttribute('data-theme', d);
+  const icons = {
+    dark: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>',
+    light: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>'
+  };
+  function updateToggle() { t.innerHTML = icons[d]; t.setAttribute('aria-label', d === 'dark' ? 'Светлая тема' : 'Тёмная тема'); }
+  updateToggle();
+  t && t.addEventListener('click', () => { d = d === 'dark' ? 'light' : 'dark'; r.setAttribute('data-theme', d); updateToggle(); });
 })();
 
-// ===== SERVER =====
-function getUrl() { return document.getElementById('serverUrl').value.trim().replace(/\/$/, ''); }
+// ============================
+// RANGE INPUTS
+// ============================
+const ranges = [
+  { id: 'threshold',  valId: 'threshold-val',  fmt: v => `${v} dB` },
+  { id: 'min-silence', valId: 'min-silence-val', fmt: v => `${parseFloat(v).toFixed(1)} с` },
+  { id: 'pad-before',  valId: 'pad-before-val',  fmt: v => `${parseFloat(v).toFixed(2)} с` },
+  { id: 'pad-after',   valId: 'pad-after-val',   fmt: v => `${parseFloat(v).toFixed(2)} с` },
+  { id: 'max-keep',    valId: 'max-keep-val',    fmt: v => `${parseFloat(v).toFixed(1)} с` },
+  { id: 'smoothing',   valId: 'smoothing-val',   fmt: v => `${parseFloat(v).toFixed(2)} с` },
+];
+ranges.forEach(({id, valId, fmt}) => {
+  const el = document.getElementById(id);
+  const vEl = document.getElementById(valId);
+  el.addEventListener('input', () => { vEl.textContent = fmt(el.value); });
+});
 
-async function checkServer() {
-  const dot = document.getElementById('serverDot');
-  const msg = document.getElementById('statusMsg');
-  const summary = document.getElementById('serverSummaryText');
-  const url = getUrl();
-  if (!url) { msg.textContent = 'Введите URL'; return; }
-  dot.className = 'status-dot checking';
-  msg.textContent = 'Проверяем...';
-  summary.textContent = 'Проверяем...';
-  try {
-    const r = await fetch(url + '/health', { signal: AbortSignal.timeout(6000) });
-    const j = await r.json();
-    serverOk = true;
-    dot.className = 'status-dot ok';
-    msg.textContent = '✓ ' + (j.ffmpeg || 'FFmpeg найден');
-    summary.textContent = url.replace('https://','').split('/')[0];
-    // Auto-close details after success
-    document.querySelector('.server-details').removeAttribute('open');
-  } catch(e) {
-    serverOk = false;
-    dot.className = 'status-dot err';
-    msg.textContent = '✗ ' + e.message;
-    summary.textContent = 'Ошибка подключения';
+// ============================
+// FILE UPLOAD
+// ============================
+const videoInput = document.getElementById('video-input');
+const dropzone = document.getElementById('dropzone');
+const fileInfo = document.getElementById('file-info');
+const fileNameDisplay = document.getElementById('file-name-display');
+const fileMetaDisplay = document.getElementById('file-meta-display');
+const btnClear = document.getElementById('btn-clear');
+const btnProcess = document.getElementById('btn-process');
+const sourceVideo = document.getElementById('source-video');
+
+let currentFile = null;
+let audioBuffer = null;
+
+dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag-over'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+dropzone.addEventListener('drop', e => {
+  e.preventDefault(); dropzone.classList.remove('drag-over');
+  const f = e.dataTransfer?.files?.[0];
+  if (f && f.type.startsWith('video/')) handleFile(f);
+  else showNotif('error', 'Неверный формат', 'Пожалуйста, выберите видеофайл (MP4, WebM, MOV и др.)');
+});
+videoInput.addEventListener('change', () => { if (videoInput.files[0]) handleFile(videoInput.files[0]); });
+
+btnClear.addEventListener('click', clearFile);
+
+function handleFile(file) {
+  currentFile = file;
+  const url = URL.createObjectURL(file);
+  sourceVideo.src = url;
+  sourceVideo.load();
+  fileNameDisplay.textContent = file.name;
+  fileMetaDisplay.textContent = `${(file.size / 1024 / 1024).toFixed(1)} МБ`;
+  fileInfo.classList.add('visible');
+  btnProcess.disabled = false;
+  hideNotif();
+  setPipelineStep('settings');
+
+  // Decode audio for analysis
+  file.arrayBuffer().then(ab => {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    return ctx.decodeAudioData(ab);
+  }).then(buf => {
+    audioBuffer = buf;
+    fileMetaDisplay.textContent = `${(file.size / 1024 / 1024).toFixed(1)} МБ · ${buf.sampleRate} Hz · ${formatTime(buf.duration)}`;
+    if (document.getElementById('show-wave').checked) drawWaveform(buf);
+  }).catch(err => {
+    showNotif('warn', 'Аудиодорожка не найдена', 'Возможно, видео без звука. Обработка будет основана только на длительности.');
+  });
+}
+
+function clearFile() {
+  currentFile = null; audioBuffer = null;
+  videoInput.value = '';
+  sourceVideo.src = '';
+  fileInfo.classList.remove('visible');
+  btnProcess.disabled = true;
+  document.getElementById('waveform-container').classList.remove('visible');
+  hideNotif();
+  document.getElementById('result-panel').classList.remove('visible');
+  document.getElementById('progress-panel').classList.remove('visible');
+  setPipelineStep('upload');
+}
+
+// ============================
+// WAVEFORM — INTERACTIVE
+// ============================
+let _waveRmsArr = null;   // raw rms bars
+let _waveBufDur = 0;      // buffer duration
+let _waveAnimId = null;   // playhead animation
+
+document.getElementById('show-wave').addEventListener('change', function() {
+  if (this.checked && audioBuffer) drawWaveform(audioBuffer);
+  else document.getElementById('waveform-container').classList.remove('visible');
+});
+
+// Redraw when any slider changes
+['threshold','min-silence','max-keep','smoothing','pad-before','pad-after'].forEach(id => {
+  document.getElementById(id).addEventListener('input', () => {
+    if (audioBuffer && document.getElementById('show-wave').checked) {
+      _drawWaveformFromCache();
+    }
+  });
+});
+
+function drawWaveform(buf) {
+  _waveBufDur = buf.duration;
+  const canvas = document.getElementById('waveform-canvas');
+  const W = canvas.parentElement.clientWidth || 900;
+  canvas.width = W * window.devicePixelRatio;
+  canvas.style.width = W + 'px';
+
+  const numBars = Math.floor(W / 2.5);
+  const data = buf.getChannelData(0);
+  const blockSize = Math.max(1, Math.floor(data.length / numBars));
+
+  const rmsArr = new Float32Array(numBars);
+  for (let i = 0; i < numBars; i++) {
+    let sum = 0;
+    const base = i * blockSize;
+    for (let j = 0; j < blockSize; j++) {
+      const v = data[base + j] || 0;
+      sum += v * v;
+    }
+    rmsArr[i] = Math.sqrt(sum / blockSize);
   }
-  updateBtns();
-}
+  _waveRmsArr = rmsArr;
 
-// ===== FILE =====
-function onDrop(e) {
-  e.preventDefault();
-  document.getElementById('dropzone').classList.remove('over');
-  const f = e.dataTransfer.files[0];
-  if (f) onFileSelect(f);
-}
-function onFileSelect(f) {
-  if (!f) return;
-  selectedFile = f;
-  document.getElementById('fileName').textContent = f.name + ' (' + (f.size/1024/1024).toFixed(1) + ' МБ)';
-  document.getElementById('fileBadge').style.display = 'inline-flex';
-  updateBtns();
-}
-function updateBtns() {
-  document.getElementById('analyzeBtn').disabled  = !(selectedFile && serverOk);
-  document.getElementById('processBtn').disabled  = !(selectedFile && serverOk);
-}
-
-// ===== SLIDER CHANGE =====
-function onSliderChange(mode) {
-  if (!wfSamples) return;
-  if (mode === 'analyze') {
-    clearTimeout(debounceAnalyze);
-    debounceAnalyze = setTimeout(runAnalyze, 900);
-  } else {
-    clearTimeout(debounceRedraw);
-    debounceRedraw = setTimeout(applyAndDraw, 60);
-  }
-}
-
-// ===== ANALYZE =====
-async function runAnalyze() {
-  const url = getUrl();
-  if (!url || !selectedFile) return;
-  document.getElementById('analyzeBtn').disabled = true;
-  document.getElementById('analyzingRow').style.display = 'flex';
-  document.getElementById('waveformWrap').classList.remove('visible');
-
-  const fd = new FormData();
-  fd.append('file', selectedFile);
-  fd.append('threshold', document.getElementById('threshold').value);
-  fd.append('min_silence', document.getElementById('minSilence').value);
-
-  try {
-    const r = await fetch(url + '/analyze', { method:'POST', body:fd });
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    const data = await r.json();
-
-    // data.waveform — массив 0..1, data.silence — [{start,end}], data.duration — float
-    wfSamples = data.waveform;
-    wfRawSilence = data.silence || [];
-    wfDuration = data.duration;
-
-    applyAndDraw();
-    document.getElementById('waveformWrap').classList.add('visible');
-  } catch(e) {
-    alert('Ошибка анализа: ' + e.message);
-  } finally {
-    document.getElementById('analyzeBtn').disabled = false;
-    document.getElementById('analyzingRow').style.display = 'none';
-  }
-}
-
-// ===== COMPUTE LOUD/CUT segs from raw silence + pad + maxKeep =====
-function computeSegs() {
-  const pad     = parseFloat(document.getElementById('pad').value) || 0.1;
-  const maxKeep = parseFloat(document.getElementById('maxKeep').value) || 0.5;
-  const raw = wfRawSilence || [];
-  const D = wfDuration;
-
-  // Silence segs after shrinking by pad
-  const shrunken = raw
-    .map(s => ({ start: s.start + pad, end: s.end - pad }))
-    .filter(s => s.end - s.start > 0.05);
-
-  // Build loud segs (gaps between shrunken silence)
-  let loud = [];
-  let prev = 0;
-  for (const s of shrunken) {
-    if (s.start - prev > 0.02) loud.push({ start: prev, end: s.start });
-    prev = s.end;
-  }
-  if (D - prev > 0.02) loud.push({ start: prev, end: D });
-
-  // Merge loud segs separated by ≤ maxKeep
-  const merged = [];
-  for (const seg of loud) {
-    if (merged.length && seg.start - merged[merged.length-1].end <= maxKeep + 0.001)
-      merged[merged.length-1].end = seg.end;
-    else merged.push({ ...seg });
-  }
-
-  // Cut = inverse of loud
-  const cut = [];
-  let p = 0;
-  for (const s of merged) {
-    if (s.start - p > 0.02) cut.push({ start: p, end: s.start });
-    p = s.end;
-  }
-  if (D - p > 0.02) cut.push({ start: p, end: D });
-
-  return { loud: merged, cut };
-}
-
-// ===== DRAW WAVE =====
-function applyAndDraw() {
-  if (!wfSamples || !wfDuration) return;
-  const { loud, cut } = computeSegs();
-  drawWave(loud, cut);
-  renderStats(loud, cut);
-}
-
-function fmtTime(s) {
-  const m = Math.floor(s / 60);
-  const sec = (s % 60).toFixed(1);
-  return `${m}:${sec.padStart(4,'0')}`;
-}
-
-function drawWave(loud, cut) {
-  const canvas = document.getElementById('waveCanvas');
-  const dpr = window.devicePixelRatio || 1;
-  const cssW = canvas.parentElement.getBoundingClientRect().width || 700;
-  const cssH = 140;
-
-  // Always resize
-  canvas.width  = Math.round(cssW * dpr);
-  canvas.height = Math.round(cssH * dpr);
-  canvas.style.width  = cssW + 'px';
-  canvas.style.height = cssH + 'px';
-
-  const ctx = canvas.getContext('2d');
-  ctx.scale(dpr, dpr);
-  const W = cssW, H = cssH;
-
-  const dark = document.documentElement.getAttribute('data-theme') === 'dark';
-
-  // Colors
-  const CLR = {
-    bg:         dark ? '#1d1c1a' : '#f3f0ec',
-    zoneLoud:   dark ? 'rgba(79,152,163,0.12)'  : 'rgba(1,105,111,0.08)',
-    zoneCut:    dark ? 'rgba(209,99,167,0.18)'  : 'rgba(161,44,123,0.12)',
-    barLoud:    dark ? '#4f98a3' : '#01696f',
-    barCut:     dark ? 'rgba(209,99,167,0.65)'  : 'rgba(161,44,123,0.55)',
-    cutBorder:  dark ? 'rgba(209,99,167,0.55)'  : 'rgba(161,44,123,0.45)',
-    midline:    dark ? 'rgba(255,255,255,0.06)'  : 'rgba(0,0,0,0.06)',
-    grid:       dark ? 'rgba(255,255,255,0.04)'  : 'rgba(0,0,0,0.035)',
-    tick:       dark ? 'rgba(255,255,255,0.3)'   : 'rgba(0,0,0,0.25)',
-    scissors:   dark ? 'rgba(209,99,167,0.9)'    : 'rgba(140,30,105,0.9)',
-    tooltipBg:  dark ? 'rgba(29,28,26,0.95)'     : 'rgba(249,248,245,0.97)',
-    tooltipFg:  dark ? '#cdccca' : '#28251d',
-    hoverLine:  dark ? 'rgba(255,255,255,0.2)'   : 'rgba(0,0,0,0.15)',
+  // Setup mouse events on wrap
+  const wrap = document.getElementById('waveform-wrap');
+  wrap.onmousemove = (e) => _waveHover(e);
+  wrap.onmouseleave = () => {
+    document.getElementById('waveform-playhead').style.display = 'none';
+    document.getElementById('waveform-tooltip').style.display = 'none';
+    document.getElementById('waveform-time').textContent = '—';
   };
 
-  const TICK_H = 16; // bottom time axis height
-  const WAVE_Y = 0;
-  const WAVE_H = H - TICK_H;
-  const MID = WAVE_Y + WAVE_H / 2;
+  document.getElementById('waveform-container').classList.add('visible');
+  _drawWaveformFromCache();
+  _startPlayheadAnimation();
+}
 
-  // Background
-  ctx.fillStyle = CLR.bg;
+function _getWaveColors() {
+  const cs = getComputedStyle(document.documentElement);
+  return {
+    active:     cs.getPropertyValue('--color-primary').trim(),
+    silentCut:  cs.getPropertyValue('--color-surface-dynamic').trim(),
+    silentKeep: cs.getPropertyValue('--color-warning').trim(),
+    bg:         cs.getPropertyValue('--color-bg').trim(),
+  };
+}
+
+function _computeSilenceMask(numBars) {
+  if (!_waveRmsArr) return null;
+  const threshold   = parseFloat(document.getElementById('threshold').value);
+  const minSilSec   = parseFloat(document.getElementById('min-silence').value);
+  const maxKeepSec  = parseFloat(document.getElementById('max-keep').value);
+  const smoothSec   = parseFloat(document.getElementById('smoothing').value);
+  const padBefore   = parseFloat(document.getElementById('pad-before').value);
+  const padAfter    = parseFloat(document.getElementById('pad-after').value);
+  const barDur      = _waveBufDur / numBars;
+
+  // 1. raw silence mask
+  const silent = new Uint8Array(numBars);
+  for (let i = 0; i < numBars; i++) {
+    const db = 20 * Math.log10(_waveRmsArr[i] + 1e-9);
+    silent[i] = db < threshold ? 1 : 0;
+  }
+
+  // 2. smoothing — merge gaps smaller than smoothSec
+  const smoothBars = Math.max(1, Math.round(smoothSec / barDur));
+  const smoothed = new Uint8Array(silent);
+  // fill short loud gaps inside silence (smooth silence)
+  for (let i = 0; i < numBars; i++) {
+    if (!smoothed[i]) {
+      // check if surrounded by silence within smoothBars
+      let allSil = true;
+      for (let k = Math.max(0,i-smoothBars); k <= Math.min(numBars-1,i+smoothBars); k++) {
+        if (!silent[k]) { allSil = false; break; }
+      }
+      if (allSil) smoothed[i] = 1;
+    }
+  }
+
+  // 3. pad loud regions: expand loud zones by padBefore/padAfter
+  const padBarsBefore = Math.round(padBefore / barDur);
+  const padBarsAfter  = Math.round(padAfter  / barDur);
+  const padded = new Uint8Array(smoothed);
+  for (let i = 0; i < numBars; i++) {
+    if (!smoothed[i]) { // loud bar
+      for (let k = Math.max(0, i - padBarsBefore); k <= Math.min(numBars-1, i + padBarsAfter); k++) {
+        padded[k] = 0; // mark as loud
+      }
+    }
+  }
+
+  // 4. classify silence runs: cut vs keep
+  // 0 = loud, 1 = silence-keep (short enough), 2 = silence-cut
+  const result = new Uint8Array(numBars); // 0=loud,1=keep,2=cut
+  let runStart = -1;
+  for (let i = 0; i <= numBars; i++) {
+    const isSil = i < numBars ? padded[i] === 1 : false;
+    if (isSil && runStart < 0) {
+      runStart = i;
+    } else if (!isSil && runStart >= 0) {
+      const runLenSec = (i - runStart) * barDur;
+      const type = runLenSec < minSilSec ? 1 : (runLenSec <= maxKeepSec ? 1 : 2);
+      for (let k = runStart; k < i; k++) result[k] = type;
+      runStart = -1;
+    }
+  }
+
+  return result;
+}
+
+function _drawWaveformFromCache() {
+  if (!_waveRmsArr) return;
+  const canvas = document.getElementById('waveform-canvas');
+  const W = parseInt(canvas.style.width) || canvas.parentElement.clientWidth || 900;
+  const DPR = window.devicePixelRatio || 1;
+  const H = 120;
+  canvas.width = Math.round(W * DPR);
+  canvas.height = Math.round(H * DPR);
+  const ctx = canvas.getContext('2d');
+  ctx.scale(DPR, DPR);
+
+  const numBars = _waveRmsArr.length;
+  const barW = W / numBars;
+  const maxRms = Math.max(..._waveRmsArr, 1e-9);
+  const colors = _getWaveColors();
+  const mask = _computeSilenceMask(numBars);
+
+  ctx.clearRect(0, 0, W, H);
+
+  // background
+  ctx.fillStyle = colors.bg;
   ctx.fillRect(0, 0, W, H);
 
-  // Zone backgrounds
-  const paintZones = (segs, color) => {
-    ctx.fillStyle = color;
-    for (const s of segs) {
-      const x1 = (s.start / wfDuration) * W;
-      const x2 = (s.end   / wfDuration) * W;
-      ctx.fillRect(x1, WAVE_Y, x2 - x1, WAVE_H);
-    }
-  };
-  paintZones(loud, CLR.zoneLoud);
-  paintZones(cut,  CLR.zoneCut);
-
-  // Grid lines
-  const gridStep = wfDuration <= 30 ? 5 : wfDuration <= 120 ? 10 : wfDuration <= 600 ? 30 : 60;
-  ctx.strokeStyle = CLR.grid;
+  // center line
+  ctx.strokeStyle = 'oklch(0.5 0 0 / 0.07)';
   ctx.lineWidth = 1;
-  for (let t = gridStep; t < wfDuration; t += gridStep) {
-    const x = (t / wfDuration) * W;
-    ctx.beginPath(); ctx.moveTo(x, WAVE_Y); ctx.lineTo(x, WAVE_Y + WAVE_H); ctx.stroke();
-  }
+  ctx.beginPath();
+  ctx.moveTo(0, H/2);
+  ctx.lineTo(W, H/2);
+  ctx.stroke();
 
-  // Midline
-  ctx.fillStyle = CLR.midline;
-  ctx.fillRect(0, MID - 0.5, W, 1);
+  // bars
+  const gap = barW > 3 ? 0.5 : 0;
+  for (let i = 0; i < numBars; i++) {
+    const rms = _waveRmsArr[i];
+    const normalized = rms / maxRms;
+    // nonlinear scale for better visibility
+    const scaled = Math.pow(normalized, 0.5);
+    const barH = Math.max(2, scaled * (H * 0.88));
+    const x = i * barW + gap;
+    const bw = Math.max(1, barW - gap * 2);
 
-  // Waveform bars
-  const N = wfSamples.length;
-  const barW = W / N;
-  for (let i = 0; i < N; i++) {
-    const x = (i / N) * W;
-    const t = (i / N) * wfDuration;
-    const amp = wfSamples[i];
-    const bH = Math.max(2, amp * WAVE_H * 0.88);
-    const inCut = cut.some(s => t >= s.start && t < s.end);
-    ctx.fillStyle = inCut ? CLR.barCut : CLR.barLoud;
-    ctx.fillRect(x, MID - bH / 2, Math.max(1, barW - 0.5), bH);
-  }
+    let color;
+    if (!mask || mask[i] === 0) color = colors.active;
+    else if (mask[i] === 1) color = colors.silentKeep;
+    else color = colors.silentCut;
 
-  // Cut zone borders + scissors labels
-  ctx.font = `500 10px Inter,sans-serif`;
-  ctx.textBaseline = 'top';
-  for (const s of cut) {
-    const x1 = (s.start / wfDuration) * W;
-    const x2 = (s.end   / wfDuration) * W;
-    const zW  = x2 - x1;
-    // Dashed border lines
-    ctx.strokeStyle = CLR.cutBorder;
-    ctx.lineWidth = 1.5;
-    ctx.setLineDash([3, 3]);
-    [x1, x2].forEach(x => {
-      ctx.beginPath(); ctx.moveTo(x, WAVE_Y); ctx.lineTo(x, WAVE_Y + WAVE_H); ctx.stroke();
-    });
-    ctx.setLineDash([]);
-    // Label
-    if (zW >= 14) {
-      const dur = s.end - s.start;
-      const label = zW > 42 ? `✂ ${dur.toFixed(1)}s` : '✂';
-      ctx.fillStyle = CLR.scissors;
-      ctx.fillText(label, x1 + 3, WAVE_Y + 3);
-    }
-  }
+    // alpha based on loudness
+    const alpha = mask && mask[i] !== 0 ? 0.55 : 0.85 + normalized * 0.15;
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = color;
 
-  // Time axis ticks
-  ctx.fillStyle = CLR.tick;
-  ctx.font = `10px Inter,sans-serif`;
-  ctx.textBaseline = 'bottom';
-  for (let t = 0; t <= wfDuration; t += gridStep) {
-    const x = (t / wfDuration) * W;
-    const lbl = fmtTime(t);
-    const tw = ctx.measureText(lbl).width;
-    if (x + tw + 4 > W && t > 0) continue;
-    ctx.fillText(lbl, x + 2, H - 1);
-  }
-  // Always show end time
-  const endLbl = fmtTime(wfDuration);
-  const ew = ctx.measureText(endLbl).width;
-  ctx.fillText(endLbl, W - ew - 2, H - 1);
-
-  // Hover cursor + tooltip
-  if (hoverT >= 0 && hoverT <= wfDuration) {
-    const hX = (hoverT / wfDuration) * W;
-    ctx.strokeStyle = CLR.hoverLine;
-    ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(hX, WAVE_Y); ctx.lineTo(hX, WAVE_Y + WAVE_H); ctx.stroke();
-
-    const inCutNow = cut.some(s => hoverT >= s.start && hoverT < s.end);
-    const label = `${fmtTime(hoverT)}  ${inCutNow ? '✂ вырезается' : '✓ остаётся'}`;
-    ctx.font = `bold 11px Inter,sans-serif`;
-    ctx.textBaseline = 'top';
-    const tw = ctx.measureText(label).width + 14;
-    const tx = Math.min(hX + 8, W - tw - 4);
-    const ty = WAVE_Y + 6;
-    ctx.fillStyle = CLR.tooltipBg;
+    // draw mirrored bar
     ctx.beginPath();
-    ctx.roundRect(tx, ty, tw, 20, 4);
+    if (ctx.roundRect) {
+      ctx.roundRect(x, (H - barH) / 2, bw, barH, Math.min(2, bw/2));
+    } else {
+      ctx.rect(x, (H - barH) / 2, bw, barH);
+    }
     ctx.fill();
-    ctx.fillStyle = CLR.tooltipFg;
-    ctx.fillText(label, tx + 7, ty + 4);
   }
+  ctx.globalAlpha = 1;
+
+  // Update stats
+  _updateWaveStats(mask, numBars);
 }
 
-function renderStats(loud, cut) {
-  const loudDur = loud.reduce((a, s) => a + s.end - s.start, 0);
-  const cutDur  = cut.reduce((a,  s) => a + s.end - s.start, 0);
-  const pct = wfDuration > 0 ? (cutDur / wfDuration * 100).toFixed(1) : 0;
-  document.getElementById('wfStats').innerHTML = `
-    <div class="wf-stat">Длина: <strong>${fmtTime(wfDuration)}</strong></div>
-    <div class="wf-stat">Вырезается: <strong style="color:var(--color-error)">${fmtTime(cutDur)} (${pct}%)</strong></div>
-    <div class="wf-stat">Остаётся: <strong style="color:var(--color-primary)">${fmtTime(loudDur)}</strong></div>
-    <div class="wf-stat">Сегментов речи: <strong>${loud.length}</strong></div>
+function _updateWaveStats(mask, numBars) {
+  if (!mask) return;
+  let soundBars = 0, keepBars = 0, cutBars = 0;
+  for (let i = 0; i < numBars; i++) {
+    if (mask[i] === 0) soundBars++;
+    else if (mask[i] === 1) keepBars++;
+    else cutBars++;
+  }
+  const total = numBars;
+  const soundPct = (soundBars / total * 100).toFixed(0);
+  const keepPct  = (keepBars  / total * 100).toFixed(0);
+  const cutPct   = (cutBars   / total * 100).toFixed(0);
+  const soundSec = (soundBars / total * _waveBufDur).toFixed(1);
+  const keepSec  = (keepBars  / total * _waveBufDur).toFixed(1);
+  const cutSec   = (cutBars   / total * _waveBufDur).toFixed(1);
+
+  document.getElementById('waveform-stats').innerHTML = `
+    <div class="waveform-stat">
+      <div class="waveform-stat-label">Звук</div>
+      <div class="waveform-stat-val sound">${soundPct}% · ${soundSec}с</div>
+    </div>
+    <div class="waveform-stat">
+      <div class="waveform-stat-label">Тишина (сохран.)</div>
+      <div class="waveform-stat-val keep">${keepPct}% · ${keepSec}с</div>
+    </div>
+    <div class="waveform-stat">
+      <div class="waveform-stat-label">Тишина (вырез.)</div>
+      <div class="waveform-stat-val cut">${cutPct}% · ${cutSec}с</div>
+    </div>
   `;
 }
 
-// ===== CANVAS MOUSE =====
-document.getElementById('waveCanvas').addEventListener('mousemove', e => {
-  const rect = e.currentTarget.getBoundingClientRect();
+function _waveHover(e) {
+  const wrap = document.getElementById('waveform-wrap');
+  const rect = wrap.getBoundingClientRect();
   const x = e.clientX - rect.left;
-  hoverT = (x / rect.width) * wfDuration;
-  if (wfSamples) {
-    const { loud, cut } = computeSegs();
-    drawWave(loud, cut);
+  const pct = Math.max(0, Math.min(1, x / rect.width));
+  const timeSec = pct * _waveBufDur;
+
+  // playhead
+  const ph = document.getElementById('waveform-playhead');
+  ph.style.display = 'block';
+  ph.style.left = (pct * 100) + '%';
+
+  // tooltip
+  const tt = document.getElementById('waveform-tooltip');
+  tt.style.display = 'block';
+  tt.style.left = (pct * 100) + '%';
+  const m = Math.floor(timeSec / 60);
+  const s = (timeSec % 60).toFixed(1);
+  tt.textContent = m > 0 ? `${m}:${String(Math.floor(timeSec%60)).padStart(2,'0')}.${s.split('.')[1]}` : `${s}с`;
+
+  // top display
+  document.getElementById('waveform-time').textContent =
+    m > 0 ? `${m}м ${String(Math.floor(timeSec%60)).padStart(2,'0')}с` : `${parseFloat(s).toFixed(1)}с`;
+
+  // highlight bar under cursor on overlay
+  _drawOverlayHighlight(pct);
+}
+
+function _drawOverlayHighlight(pct) {
+  const canvas = document.getElementById('waveform-overlay');
+  const wrap = document.getElementById('waveform-wrap');
+  const W = wrap.clientWidth;
+  const H = 120;
+  const DPR = window.devicePixelRatio || 1;
+  canvas.width = Math.round(W * DPR);
+  canvas.height = Math.round(H * DPR);
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+
+  const ctx = canvas.getContext('2d');
+  ctx.scale(DPR, DPR);
+  ctx.clearRect(0, 0, W, H);
+
+  // vertical scan line
+  const x = pct * W;
+  const grad = ctx.createLinearGradient(x - 20, 0, x + 20, 0);
+  grad.addColorStop(0, 'rgba(255,255,255,0)');
+  grad.addColorStop(0.5, 'rgba(255,255,255,0.07)');
+  grad.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(x - 20, 0, 40, H);
+
+  // thin line
+  ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([3, 3]);
+  ctx.beginPath();
+  ctx.moveTo(x, 0);
+  ctx.lineTo(x, H);
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function _startPlayheadAnimation() {
+  if (_waveAnimId) cancelAnimationFrame(_waveAnimId);
+  const video = document.getElementById('source-video');
+  let lastTime = -1;
+
+  function tick() {
+    _waveAnimId = requestAnimationFrame(tick);
+    if (!video.src || video.paused) return;
+    const t = video.currentTime;
+    if (Math.abs(t - lastTime) < 0.05) return;
+    lastTime = t;
+    if (!_waveBufDur) return;
+    const pct = t / _waveBufDur;
+    const ph = document.getElementById('waveform-playhead');
+    if (ph) {
+      ph.style.display = 'block';
+      ph.style.left = (pct * 100) + '%';
+    }
+  }
+  tick();
+}
+
+// Handle theme changes — redraw
+const _themeObserver = new MutationObserver(() => {
+  if (_waveRmsArr && document.getElementById('show-wave').checked) {
+    _drawWaveformFromCache();
   }
 });
-document.getElementById('waveCanvas').addEventListener('mouseleave', () => {
-  hoverT = -1;
-  if (wfSamples) applyAndDraw();
+_themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+// Handle resize
+window.addEventListener('resize', () => {
+  if (_waveRmsArr && document.getElementById('show-wave').checked) {
+    const canvas = document.getElementById('waveform-canvas');
+    const W = canvas.parentElement.clientWidth || 900;
+    canvas.style.width = W + 'px';
+    _drawWaveformFromCache();
+  }
 });
 
-// ===== RESIZE =====
-window.addEventListener('resize', () => { if (wfSamples) applyAndDraw(); });
 
-// ===== PROCESS =====
-async function runProcess() {
-  const url = getUrl();
-  if (!url || !selectedFile) return;
-  document.getElementById('processBtn').disabled = true;
-  document.getElementById('progressWrap').style.display = 'block';
-  document.getElementById('downloadBtn').classList.remove('visible');
-  document.getElementById('processMsg').textContent = 'Отправляем на сервер…';
+// ============================
+// PIPELINE STATE
+// ============================
+function setPipelineStep(step) {
+  const order = ['upload','settings','process','result'];
+  const idx = order.indexOf(step);
+  order.forEach((s, i) => {
+    const el = document.getElementById('step-' + s);
+    el.classList.remove('active','done');
+    if (i < idx) el.classList.add('done');
+    else if (i === idx) el.classList.add('active');
+  });
+}
 
-  const fd = new FormData();
-  fd.append('file', selectedFile);
-  fd.append('threshold',   document.getElementById('threshold').value);
-  fd.append('min_silence', document.getElementById('minSilence').value);
-  fd.append('pad',         document.getElementById('pad').value);
-  fd.append('max_keep',    document.getElementById('maxKeep').value);
+// ============================
+// NOTIFICATIONS
+// ============================
+function showNotif(type, title, msg) {
+  const el = document.getElementById('notification');
+  const iconEl = document.getElementById('notif-icon');
+  const bodyEl = document.getElementById('notif-body');
+  el.className = `notification visible ${type}`;
+  iconEl.innerHTML = type === 'error'
+    ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
+    : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+  bodyEl.innerHTML = `<strong>${title}</strong>${msg}`;
+}
+function hideNotif() { document.getElementById('notification').classList.remove('visible'); }
+
+// ============================
+// PROCESSING
+// ============================
+btnProcess.addEventListener('click', startProcessing);
+
+async function startProcessing() {
+  if (!currentFile) return;
+  if (!audioBuffer) {
+    showNotif('warn', 'Аудио не загружено', ' Дождитесь завершения анализа аудиодорожки.');
+    return;
+  }
+
+  setPipelineStep('process');
+  btnProcess.disabled = true;
+  document.getElementById('result-panel').classList.remove('visible');
+
+  const progressPanel = document.getElementById('progress-panel');
+  progressPanel.classList.add('visible');
+  progressPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  const log = document.getElementById('progress-log');
+  log.innerHTML = '';
+
+  function addLog(msg, cls = '') {
+    const ts = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const line = document.createElement('div');
+    line.className = `log-line ${cls}`;
+    line.innerHTML = `<span class="ts">${ts}</span>${msg}`;
+    log.appendChild(line);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  function setProgress(pct, title) {
+    document.getElementById('progress-bar').style.width = pct + '%';
+    document.getElementById('progress-pct').textContent = Math.round(pct) + '%';
+    if (title) document.getElementById('progress-title').textContent = title;
+  }
 
   try {
-    document.getElementById('progressBar').style.width = '30%';
-    document.getElementById('processMsg').textContent = 'Обрабатываем FFmpeg…';
-    const r = await fetch(url + '/process', { method:'POST', body:fd });
-    if (!r.ok) throw new Error('HTTP ' + r.status + ': ' + await r.text());
-    document.getElementById('progressBar').style.width = '90%';
-    const blob = await r.blob();
-    document.getElementById('progressBar').style.width = '100%';
-    const objUrl = URL.createObjectURL(blob);
-    const a = document.getElementById('downloadBtn');
-    a.href = objUrl;
-    a.download = selectedFile.name.replace(/\.[^.]+$/, '') + '_cut.mp4';
-    a.classList.add('visible');
-    document.getElementById('processMsg').textContent = '✓ Готово!';
-  } catch(e) {
-    document.getElementById('processMsg').textContent = '✗ Ошибка: ' + e.message;
-  } finally {
-    document.getElementById('processBtn').disabled = false;
+    const threshold = parseFloat(document.getElementById('threshold').value);
+    const minSilence = parseFloat(document.getElementById('min-silence').value);
+    const padBefore  = parseFloat(document.getElementById('pad-before').value);
+    const padAfter   = parseFloat(document.getElementById('pad-after').value);
+    const maxKeep    = parseFloat(document.getElementById('max-keep').value);
+    const smoothing  = parseFloat(document.getElementById('smoothing').value);
+
+    addLog('Начало анализа аудиодорожки...');
+    setProgress(5, 'Анализ аудио...');
+    await sleep(50);
+
+    // — Detect silence segments —
+    const sampleRate = audioBuffer.sampleRate;
+    const channelData = audioBuffer.getChannelData(0);
+    const frameLen = Math.floor(sampleRate * 0.02); // 20ms frames
+    const hopLen = Math.floor(frameLen / 2);
+    const totalDuration = audioBuffer.duration;
+
+    addLog(`Параметры: порог ${threshold} dB, мин. тишина ${minSilence}с, отступы ±${padBefore}/${padAfter}с`);
+    setProgress(15, 'Вычисление RMS...');
+    await sleep(50);
+
+    // Compute RMS per frame
+    const numFrames = Math.floor((channelData.length - frameLen) / hopLen);
+    const isLoud = new Uint8Array(numFrames);
+
+    for (let i = 0; i < numFrames; i++) {
+      let sum = 0;
+      const start = i * hopLen;
+      for (let j = 0; j < frameLen; j++) {
+        const val = channelData[start + j] || 0;
+        sum += val * val;
+      }
+      const rmsDb = 10 * Math.log10(sum / frameLen + 1e-12);
+      isLoud[i] = rmsDb >= threshold ? 1 : 0;
+    }
+
+    setProgress(30, 'Сглаживание...');
+    await sleep(50);
+
+    // Apply smoothing
+    const smoothFrames = Math.max(1, Math.round(smoothing / (hopLen / sampleRate)));
+    const smoothed = new Uint8Array(numFrames);
+    for (let i = 0; i < numFrames; i++) {
+      let cnt = 0;
+      const from = Math.max(0, i - smoothFrames);
+      const to = Math.min(numFrames - 1, i + smoothFrames);
+      for (let k = from; k <= to; k++) cnt += isLoud[k];
+      smoothed[i] = cnt > (to - from + 1) / 2 ? 1 : 0;
+    }
+
+    addLog(`Сглаживание: окно ${smoothFrames} фреймов`);
+    setProgress(40, 'Определение сегментов...');
+    await sleep(50);
+
+    // Build loud segments with padding
+    const frameTime = hopLen / sampleRate;
+    const segments = [];
+    let inLoud = false;
+    let segStart = 0;
+
+    for (let i = 0; i < numFrames; i++) {
+      if (smoothed[i] && !inLoud) {
+        inLoud = true;
+        segStart = Math.max(0, i * frameTime - padBefore);
+      } else if (!smoothed[i] && inLoud) {
+        inLoud = false;
+        const segEnd = Math.min(totalDuration, i * frameTime + padAfter);
+        if (segEnd - segStart >= 0.05) segments.push([segStart, segEnd]);
+      }
+    }
+    if (inLoud) {
+      const segEnd = totalDuration;
+      segments.push([segStart, segEnd]);
+    }
+
+    // Merge nearby segments (gap <= maxKeep → keep as-is, insert silence slot)
+    const merged = [];
+    for (const [s, e] of segments) {
+      if (merged.length === 0) { merged.push([s, e]); continue; }
+      const prev = merged[merged.length - 1];
+      const gap = s - prev[1];
+      if (gap <= maxKeep) {
+        // Merge — keep the gap (it's short enough)
+        merged[merged.length - 1] = [prev[0], e];
+      } else if (gap <= minSilence) {
+        // Small gap: just merge
+        merged[merged.length - 1] = [prev[0], e];
+      } else {
+        merged.push([s, e]);
+      }
+    }
+
+    addLog(`Найдено ${merged.length} активных сегментов`, 'success');
+
+    if (merged.length === 0) {
+      showNotif('error', 'Нет активных сегментов', ' Попробуйте снизить порог громкости или уменьшить минимальную длину тишины.');
+      btnProcess.disabled = false;
+      progressPanel.classList.remove('visible');
+      setPipelineStep('settings');
+      return;
+    }
+
+    const loudDuration = merged.reduce((sum, [s, e]) => sum + (e - s), 0);
+    const removedDuration = totalDuration - loudDuration;
+    addLog(`Будет удалено: ${removedDuration.toFixed(1)}с (${(removedDuration/totalDuration*100).toFixed(1)}%)`);
+
+    setProgress(50, 'Подготовка к рендерингу...');
+    await sleep(100);
+
+    // — Render output video —
+    addLog('Запуск рендеринга через MediaRecorder...');
+    setProgress(55, 'Рендеринг видео...');
+
+    const outputBlob = await renderSegments(merged, totalDuration, (pct) => {
+      setProgress(55 + pct * 0.4, 'Рендеринг видео...');
+      if (pct % 20 < 2) addLog(`Прогресс рендеринга: ${Math.round(pct)}%`);
+    });
+
+    setProgress(97, 'Финализация...');
+    addLog('Сборка финального файла...', 'success');
+    await sleep(200);
+
+    setProgress(100, 'Готово!');
+    addLog('✓ Обработка завершена!', 'success');
+
+    showResult(outputBlob, {
+      originalDuration: totalDuration,
+      outputDuration: loudDuration,
+      removedDuration,
+      segmentCount: merged.length,
+      originalSize: currentFile.size,
+    });
+
+  } catch (err) {
+    console.error(err);
+    addLog('Ошибка: ' + err.message, 'error');
+    showNotif('error', 'Ошибка обработки', ' ' + err.message);
+    btnProcess.disabled = false;
+    setPipelineStep('settings');
   }
 }
 
-// ===== DEMO WAVEFORM (для теста без сервера) =====
-// Раскомментируй в браузере чтобы увидеть waveform без сервера
-/*
-(function(){
-  const N = 300;
-  const samples = Array.from({length:N}, (_,i) => {
-    const t = i/N;
-    const silence = (t > 0.15 && t < 0.28) || (t > 0.45 && t < 0.55) || (t > 0.72 && t < 0.82);
-    return silence ? Math.random()*0.04 : Math.random()*0.6 + 0.1 + Math.sin(i*0.3)*0.15;
+async function renderSegments(segments, totalDuration, onProgress) {
+  return new Promise((resolve, reject) => {
+    const video = sourceVideo;
+
+    // Setup canvas to draw frames
+    const canvas = document.createElement('canvas');
+    // We need to know video dimensions after metadata loaded
+    video.addEventListener('loadedmetadata', start, { once: true });
+    if (video.readyState >= 1) start();
+
+    function start() {
+      canvas.width = video.videoWidth || 1280;
+      canvas.height = video.videoHeight || 720;
+      const ctx2d = canvas.getContext('2d');
+
+      // Setup audio capture too
+      let stream;
+      try {
+        const videoStream = canvas.captureStream(30);
+        // Audio from source video
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const src = audioCtx.createMediaElementSource(video);
+        const dest = audioCtx.createMediaStreamDestination();
+        src.connect(dest);
+        src.connect(audioCtx.destination);
+        const audioTrack = dest.stream.getAudioTracks()[0];
+        if (audioTrack) videoStream.addTrack(audioTrack);
+        stream = videoStream;
+      } catch(e) {
+        stream = canvas.captureStream(30);
+      }
+
+      const mimeType = ['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'].find(m => MediaRecorder.isTypeSupported(m)) || 'video/webm';
+      const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 5_000_000 });
+      const chunks = [];
+      recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+      recorder.onstop = () => resolve(new Blob(chunks, { type: mimeType }));
+      recorder.onerror = e => reject(e.error);
+      recorder.start(100);
+
+      let segIdx = 0;
+      let drawHandle = null;
+
+      function drawLoop() {
+        ctx2d.drawImage(video, 0, 0, canvas.width, canvas.height);
+        drawHandle = requestAnimationFrame(drawLoop);
+      }
+
+      function processNextSegment() {
+        if (segIdx >= segments.length) {
+          cancelAnimationFrame(drawHandle);
+          recorder.stop();
+          return;
+        }
+
+        const [start, end] = segments[segIdx];
+        segIdx++;
+
+        video.currentTime = start;
+        video.addEventListener('seeked', function onSeeked() {
+          video.removeEventListener('seeked', onSeeked);
+          drawLoop();
+          video.play();
+
+          const checkEnd = setInterval(() => {
+            if (video.currentTime >= end - 0.05 || video.ended) {
+              clearInterval(checkEnd);
+              video.pause();
+              cancelAnimationFrame(drawHandle);
+              const progress = segIdx / segments.length * 100;
+              onProgress(progress);
+              setTimeout(processNextSegment, 50);
+            }
+          }, 30);
+        }, { once: true });
+      }
+
+      processNextSegment();
+    }
   });
-  wfSamples = samples;
-  wfDuration = 60;
-  wfRawSilence = [{start:9,end:16.8},{start:27,end:33},{start:43.2,end:49.2}];
-  applyAndDraw();
-  document.getElementById('waveformWrap').classList.add('visible');
-})();
-*/
+}
+
+function showResult(blob, stats) {
+  setPipelineStep('result');
+  document.getElementById('progress-panel').classList.remove('visible');
+  const resultPanel = document.getElementById('result-panel');
+  resultPanel.classList.add('visible');
+  resultPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  document.getElementById('result-subtitle').textContent =
+    `Удалено ${stats.removedDuration.toFixed(1)} с · ${stats.segmentCount} сегментов звука · ${(stats.removedDuration/stats.originalDuration*100).toFixed(1)}% вырезано`;
+
+  // Stats
+  document.getElementById('stats-grid').innerHTML = `
+    <div class="stat-card highlight">
+      <div class="stat-label">Сэкономлено</div>
+      <div class="stat-value">${(stats.removedDuration/stats.originalDuration*100).toFixed(0)}<span class="stat-unit">%</span></div>
+      <div class="stat-unit">${stats.removedDuration.toFixed(1)} секунд</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Было</div>
+      <div class="stat-value">${formatTime(stats.originalDuration)}</div>
+      <div class="stat-unit">длительность</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Стало</div>
+      <div class="stat-value">${formatTime(stats.outputDuration)}</div>
+      <div class="stat-unit">длительность</div>
+    </div>
+  `;
+
+  // Preview
+  const blobUrl = URL.createObjectURL(blob);
+  document.getElementById('video-preview').innerHTML = `
+    <video controls playsinline>
+      <source src="${blobUrl}" type="${blob.type}">
+    </video>
+  `;
+
+  // Download
+  const btnDl = document.getElementById('btn-download');
+  btnDl.onclick = () => {
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    const ext = blob.type.includes('mp4') ? 'mp4' : 'webm';
+    a.download = (currentFile?.name?.replace(/\.[^.]+$/, '') || 'video') + '_cut.' + ext;
+    a.click();
+  };
+
+  btnProcess.disabled = false;
+}
+
+document.getElementById('btn-restart').addEventListener('click', clearFile);
+
+// ============================
+// ACCORDION
+// ============================
+['acc-how','acc-limits','acc-python'].forEach(id => {
+  const header = document.getElementById(id);
+  const body = document.getElementById(id + '-body');
+  header.addEventListener('click', () => {
+    const isOpen = body.classList.contains('open');
+    header.classList.toggle('open', !isOpen);
+    body.classList.toggle('open', !isOpen);
+  });
+});
+
+// ============================
+// UTILS
+// ============================
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+function formatTime(sec) {
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return m > 0 ? `${m}м ${s.toString().padStart(2,'0')}с` : `${s}с`;
+}
 </script>
 </body>
 </html>
