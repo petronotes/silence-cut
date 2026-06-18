@@ -3,23 +3,28 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SilenceCut — удалить паузы, сохранить MP4</title>
+<title>SilenceCut</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300..700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..700&display=swap" rel="stylesheet">
 <style>
+/* ===== TOKENS ===== */
 :root,[data-theme="light"]{
   --color-bg:#f7f6f2;--color-surface:#f9f8f5;--color-surface-2:#fbfbf9;
-  --color-surface-offset:#f0ede8;--color-border:oklch(0.3 0.01 80 / 0.12);
+  --color-surface-offset:#f3f0ec;--color-surface-dynamic:#e6e4df;
+  --color-divider:#dcd9d5;--color-border:#d4d1ca;
   --color-text:#28251d;--color-text-muted:#7a7974;--color-text-faint:#bab9b4;
   --color-primary:#01696f;--color-primary-hover:#0c4e54;
-  --color-primary-hi:oklch(0.48 0.08 192 / 0.12);
-  --color-success:#437a22;--color-error:#a12c7b;--color-warning:#964219;
-  --color-warn-hi:oklch(0.55 0.12 55 / 0.10);
+  --color-primary-highlight:#cedcd8;
+  --color-error:#a12c7b;--color-error-highlight:#e0ced7;
+  --color-success:#437a22;
+  --color-warning:#964219;
+  --radius-sm:.375rem;--radius-md:.5rem;--radius-lg:.75rem;--radius-xl:1rem;--radius-full:9999px;
   --shadow-sm:0 1px 2px oklch(0.2 0.01 80/0.06);
   --shadow-md:0 4px 12px oklch(0.2 0.01 80/0.08);
-  --font-body:'Inter','Helvetica Neue',sans-serif;
-  --font-mono:'JetBrains Mono','Fira Code',monospace;
+  --shadow-lg:0 12px 32px oklch(0.2 0.01 80/0.12);
+  --transition:180ms cubic-bezier(.16,1,.3,1);
+  --font-body:'Inter',sans-serif;
   --text-xs:clamp(.75rem,.7rem + .25vw,.875rem);
   --text-sm:clamp(.875rem,.8rem + .35vw,1rem);
   --text-base:clamp(1rem,.95rem + .25vw,1.125rem);
@@ -28,504 +33,347 @@
   --space-1:.25rem;--space-2:.5rem;--space-3:.75rem;--space-4:1rem;
   --space-5:1.25rem;--space-6:1.5rem;--space-8:2rem;--space-10:2.5rem;
   --space-12:3rem;--space-16:4rem;
-  --radius-sm:.375rem;--radius-md:.5rem;--radius-lg:.75rem;--radius-xl:1rem;
-  --radius-full:9999px;
-  --transition:180ms cubic-bezier(.16,1,.3,1);
 }
 [data-theme="dark"]{
-  --color-bg:#0f0f0e;--color-surface:#161614;--color-surface-2:#1c1b19;
-  --color-surface-offset:#1f1e1c;--color-border:oklch(1 0 0 / 0.08);
-  --color-text:#cdccca;--color-text-muted:#797876;--color-text-faint:#4a4947;
+  --color-bg:#171614;--color-surface:#1c1b19;--color-surface-2:#201f1d;
+  --color-surface-offset:#1d1c1a;--color-surface-dynamic:#2d2c2a;
+  --color-divider:#262523;--color-border:#393836;
+  --color-text:#cdccca;--color-text-muted:#797876;--color-text-faint:#5a5957;
   --color-primary:#4f98a3;--color-primary-hover:#227f8b;
-  --color-primary-hi:oklch(0.6 0.08 192 / 0.12);
-  --color-success:#6daa45;--color-error:#d163a7;--color-warning:#fdab43;
-  --color-warn-hi:oklch(0.7 0.12 75 / 0.08);
-  --shadow-sm:0 1px 3px oklch(0 0 0/.3);--shadow-md:0 4px 16px oklch(0 0 0/.4);
+  --color-primary-highlight:#313b3b;
+  --color-error:#d163a7;--color-error-highlight:#4c3d46;
+  --color-success:#6daa45;
+  --color-warning:#bb653b;
+  --shadow-sm:0 1px 2px oklch(0 0 0/.2);
+  --shadow-md:0 4px 12px oklch(0 0 0/.3);
+  --shadow-lg:0 12px 32px oklch(0 0 0/.4);
 }
-@media(prefers-color-scheme:light){:root:not([data-theme]){
-  --color-bg:#f7f6f2;--color-surface:#f9f8f5;
+@media(prefers-color-scheme:dark){:root:not([data-theme]){
+  --color-bg:#171614;--color-surface:#1c1b19;--color-surface-2:#201f1d;
+  --color-surface-offset:#1d1c1a;--color-surface-dynamic:#2d2c2a;
+  --color-divider:#262523;--color-border:#393836;
+  --color-text:#cdccca;--color-text-muted:#797876;--color-text-faint:#5a5957;
+  --color-primary:#4f98a3;--color-primary-hover:#227f8b;
+  --color-error:#d163a7;--color-success:#6daa45;--color-warning:#bb653b;
+  --shadow-sm:0 1px 2px oklch(0 0 0/.2);
+  --shadow-md:0 4px 12px oklch(0 0 0/.3);
+  --shadow-lg:0 12px 32px oklch(0 0 0/.4);
 }}
+
+/* ===== RESET ===== */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;scroll-behavior:smooth}
-body{min-height:100dvh;font-family:var(--font-body);font-size:var(--text-base);
-  color:var(--color-text);background:var(--color-bg);line-height:1.6}
+html{-webkit-font-smoothing:antialiased;scroll-behavior:smooth}
+body{min-height:100dvh;font-family:var(--font-body);font-size:var(--text-base);color:var(--color-text);background:var(--color-bg);line-height:1.6}
+img,canvas,svg{display:block;max-width:100%}
 button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
 input,select{font:inherit;color:inherit}
 a,button,[role="button"],input,select{transition:color var(--transition),background var(--transition),border-color var(--transition),box-shadow var(--transition)}
 :focus-visible{outline:2px solid var(--color-primary);outline-offset:3px;border-radius:var(--radius-sm)}
-::selection{background:oklch(from var(--color-primary) l c h / .2);color:var(--color-text)}
 
-/* ── Layout ── */
-.wrap{max-width:760px;margin-inline:auto;padding-inline:var(--space-4)}
+/* ===== LAYOUT ===== */
+.app{max-width:800px;margin-inline:auto;padding:var(--space-8) var(--space-4)}
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-8)}
+.logo{display:flex;align-items:center;gap:var(--space-3);font-weight:700;font-size:var(--text-lg)}
+.logo svg{color:var(--color-primary)}
+.theme-btn{width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-full);color:var(--color-text-muted)}
+.theme-btn:hover{color:var(--color-text);background:var(--color-surface-offset)}
 
-header{border-bottom:1px solid var(--color-border);padding-block:var(--space-4)}
-.header-inner{display:flex;align-items:center;justify-content:space-between;gap:var(--space-4)}
-.logo{display:flex;align-items:center;gap:var(--space-3)}
-.logo svg{flex-shrink:0}
-.logo-text{font-size:var(--text-lg);font-weight:700;letter-spacing:-.02em}
-.logo-text span{color:var(--color-primary)}
+/* ===== CARDS ===== */
+.card{background:var(--color-surface);border:1px solid oklch(from var(--color-text) l c h/.08);border-radius:var(--radius-xl);padding:var(--space-6);margin-bottom:var(--space-4);box-shadow:var(--shadow-sm)}
+.card-title{font-size:var(--text-sm);font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--color-text-muted);margin-bottom:var(--space-4)}
 
-.theme-btn{width:36px;height:36px;display:flex;align-items:center;justify-content:center;
-  border-radius:var(--radius-full);color:var(--color-text-muted)}
-.theme-btn:hover{background:var(--color-surface-offset);color:var(--color-text)}
-
-main{padding-block:var(--space-10) var(--space-16)}
-
-/* ── Server row ── */
-.server-row{display:flex;gap:var(--space-2);margin-bottom:var(--space-6);align-items:center}
-.server-input{flex:1;padding:var(--space-2) var(--space-3);
-  background:var(--color-surface);border:1px solid var(--color-border);
-  border-radius:var(--radius-md);font-size:var(--text-sm);color:var(--color-text)}
-.server-input:focus{outline:2px solid var(--color-primary);outline-offset:0}
-.btn-check{padding:var(--space-2) var(--space-4);background:var(--color-surface);
-  border:1px solid var(--color-border);border-radius:var(--radius-md);
-  font-size:var(--text-sm);white-space:nowrap}
-.btn-check:hover{border-color:var(--color-primary);color:var(--color-primary)}
-.server-status{display:flex;align-items:center;gap:var(--space-2);
-  font-size:var(--text-xs);color:var(--color-text-muted)}
-.dot{width:8px;height:8px;border-radius:var(--radius-full);background:var(--color-text-faint);flex-shrink:0}
-.dot.ok{background:var(--color-success)}
-.dot.err{background:var(--color-error)}
-.dot.spin{background:var(--color-warning);animation:pulse 1s ease-in-out infinite}
+/* ===== SERVER ROW ===== */
+.server-row{display:flex;gap:var(--space-2);align-items:center}
+.server-row input{flex:1;padding:var(--space-2) var(--space-3);background:var(--color-surface-offset);border:1px solid var(--color-border);border-radius:var(--radius-md)}
+.server-row input:focus{outline:none;border-color:var(--color-primary)}
+.btn{padding:var(--space-2) var(--space-4);border-radius:var(--radius-md);font-size:var(--text-sm);font-weight:500;white-space:nowrap}
+.btn-ghost{border:1px solid var(--color-border);color:var(--color-text-muted)}
+.btn-ghost:hover{border-color:var(--color-primary);color:var(--color-primary)}
+.btn-primary{background:var(--color-primary);color:#fff;border:1px solid transparent}
+.btn-primary:hover{background:var(--color-primary-hover)}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed}
+.status-dot{width:8px;height:8px;border-radius:50%;background:var(--color-text-faint);flex-shrink:0;transition:background .3s}
+.status-dot.ok{background:var(--color-success)}
+.status-dot.err{background:var(--color-error)}
+.status-dot.checking{animation:pulse 1s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+#statusMsg{font-size:var(--text-xs);color:var(--color-text-muted);margin-top:var(--space-2)}
 
-/* ── Drop zone ── */
-.dropzone{position:relative;border:2px dashed var(--color-border);border-radius:var(--radius-xl);
-  padding:var(--space-12) var(--space-8);text-align:center;cursor:pointer;
-  background:var(--color-surface);transition:border-color var(--transition),background var(--transition)}
-.dropzone:hover,.dropzone.drag{border-color:var(--color-primary);background:var(--color-primary-hi)}
-.dropzone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
-.dz-icon{margin-inline:auto;margin-bottom:var(--space-4);color:var(--color-text-faint);width:48px;height:48px}
-.dz-title{font-size:var(--text-lg);font-weight:600;margin-bottom:var(--space-1)}
-.dz-sub{font-size:var(--text-sm);color:var(--color-text-muted)}
-.file-info{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-3) var(--space-4);
-  background:var(--color-primary-hi);border-radius:var(--radius-lg);margin-top:var(--space-4);
-  font-size:var(--text-sm);color:var(--color-primary)}
-.file-info svg{flex-shrink:0}
+/* ===== DROPZONE ===== */
+.dropzone{border:2px dashed var(--color-border);border-radius:var(--radius-lg);padding:var(--space-10) var(--space-8);text-align:center;cursor:pointer;transition:border-color var(--transition),background var(--transition)}
+.dropzone:hover,.dropzone.over{border-color:var(--color-primary);background:oklch(from var(--color-primary) l c h/.04)}
+.dropzone svg{margin-inline:auto;margin-bottom:var(--space-3);color:var(--color-text-faint)}
+.dropzone p{color:var(--color-text-muted);font-size:var(--text-sm)}
+.dropzone strong{color:var(--color-text)}
+.file-badge{display:inline-flex;align-items:center;gap:var(--space-2);background:var(--color-primary-highlight);color:var(--color-primary);padding:var(--space-1) var(--space-3);border-radius:var(--radius-full);font-size:var(--text-sm);font-weight:500;margin-top:var(--space-3)}
 
-/* ── Settings ── */
-.settings{margin-top:var(--space-6);background:var(--color-surface);
-  border:1px solid var(--color-border);border-radius:var(--radius-xl);overflow:hidden}
-.settings-head{padding:var(--space-4) var(--space-5);cursor:pointer;
-  display:flex;align-items:center;justify-content:space-between;user-select:none}
-.settings-head:hover{background:var(--color-surface-offset)}
-.settings-head h2{font-size:var(--text-sm);font-weight:600;color:var(--color-text-muted);
-  text-transform:uppercase;letter-spacing:.06em}
-.chevron{transition:transform var(--transition)}
-.settings-body{padding:var(--space-5);display:grid;grid-template-columns:1fr 1fr;
-  gap:var(--space-4) var(--space-6);border-top:1px solid var(--color-border)}
-.settings-body.hidden{display:none}
-.field label{display:block;font-size:var(--text-xs);font-weight:600;
-  text-transform:uppercase;letter-spacing:.06em;color:var(--color-text-muted);margin-bottom:var(--space-2)}
-.field input[type=range]{width:100%;accent-color:var(--color-primary)}
-.field-val{font-family:var(--font-mono);font-size:var(--text-sm);color:var(--color-primary);
-  font-weight:600;margin-left:var(--space-2)}
-.field-hint{font-size:var(--text-xs);color:var(--color-text-faint);margin-top:var(--space-1)}
-
-/* ── Action button ── */
-.btn-primary{width:100%;margin-top:var(--space-6);padding:var(--space-4);
-  background:var(--color-primary);color:#fff;border-radius:var(--radius-lg);
-  font-size:var(--text-base);font-weight:600;letter-spacing:-.01em;
-  box-shadow:var(--shadow-sm)}
-.btn-primary:hover:not(:disabled){background:var(--color-primary-hover);box-shadow:var(--shadow-md)}
-.btn-primary:disabled{opacity:.45;cursor:not-allowed}
-
-/* ── Progress ── */
-.progress-card{margin-top:var(--space-6);background:var(--color-surface);
-  border:1px solid var(--color-border);border-radius:var(--radius-xl);
-  padding:var(--space-5);display:none}
-.progress-card.show{display:block}
-.progress-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-3)}
-.progress-label{font-size:var(--text-sm);font-weight:600}
-.progress-pct{font-family:var(--font-mono);font-size:var(--text-sm);color:var(--color-primary)}
-.bar-track{height:6px;background:var(--color-surface-offset);border-radius:var(--radius-full);overflow:hidden}
-.bar-fill{height:100%;background:var(--color-primary);border-radius:var(--radius-full);
-  transition:width .4s ease;width:0%}
-.progress-log{margin-top:var(--space-3);font-size:var(--text-xs);
-  color:var(--color-text-muted);font-family:var(--font-mono)}
-
-/* ── Result ── */
-.result-card{margin-top:var(--space-6);background:var(--color-surface);
-  border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--space-5);display:none}
-.result-card.show{display:block}
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-3);margin-bottom:var(--space-5)}
-.stat{background:var(--color-surface-offset);border-radius:var(--radius-lg);
-  padding:var(--space-3) var(--space-4);text-align:center}
-.stat-val{font-family:var(--font-mono);font-size:var(--text-lg);font-weight:700;color:var(--color-primary)}
-.stat-label{font-size:var(--text-xs);color:var(--color-text-muted);margin-top:var(--space-1)}
-.btn-dl{width:100%;padding:var(--space-4);background:var(--color-success);color:#fff;
-  border-radius:var(--radius-lg);font-size:var(--text-base);font-weight:600;
-  display:flex;align-items:center;justify-content:center;gap:var(--space-2)}
-.btn-dl:hover{filter:brightness(1.12)}
-
-/* ── Error ── */
-.error-box{margin-top:var(--space-4);padding:var(--space-4);background:var(--color-warn-hi);
-  border:1px solid oklch(from var(--color-error) l c h / .25);border-radius:var(--radius-lg);
-  font-size:var(--text-sm);color:var(--color-error);display:none}
-.error-box.show{display:block}
-
-footer{border-top:1px solid var(--color-border);padding-block:var(--space-6);
-  text-align:center;font-size:var(--text-xs);color:var(--color-text-faint)}
-footer a{color:var(--color-text-muted);text-decoration:none}
-footer a:hover{color:var(--color-primary)}
-
-@media(max-width:520px){
-  .settings-body{grid-template-columns:1fr}
-  .stats{grid-template-columns:1fr 1fr}
-}
+/* ===== PARAMS ===== */
+.params-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4)}
+@media(max-width:520px){.params-grid{grid-template-columns:1fr}}
+.param-item label{display:flex;justify-content:space-between;font-size:var(--text-sm);margin-bottom:var(--space-2)}
+.param-item label span{color:var(--color-text-muted)}
+.param-val{font-weight:600;color:var(--color-primary)}
+input[type=range]{width:100%;accent-color:var(--color-primary);height:4px;cursor:pointer}
 
 /* ===== WAVEFORM ===== */
-.waveform-section { margin-top: var(--space-6); display: none; }
-.waveform-section.visible { display: block; }
-.waveform-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-3); }
-.waveform-title { font-size: var(--text-sm); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-text-muted); }
-.waveform-legend { display: flex; gap: var(--space-4); }
-.legend-item { display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-xs); color: var(--color-text-muted); }
-.legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
-.legend-dot.loud { background: var(--color-primary); }
-.legend-dot.silent { background: var(--color-error); opacity: 0.6; }
-.waveform-wrap { position: relative; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); overflow: hidden; }
-#waveformCanvas { display: block; width: 100%; height: 120px; cursor: crosshair; }
-.waveform-time { display: flex; justify-content: space-between; padding: var(--space-1) var(--space-3); }
-.waveform-time span { font-size: var(--text-xs); font-family: var(--font-mono); color: var(--color-text-faint); }
-.waveform-stats { display: flex; gap: var(--space-4); margin-top: var(--space-3); flex-wrap: wrap; }
-.wstat { font-size: var(--text-xs); color: var(--color-text-muted); }
-.wstat strong { color: var(--color-text); font-family: var(--font-mono); }
-.analyze-btn { margin-top: var(--space-4); padding: var(--space-2) var(--space-5); background: var(--color-surface-offset); border: 1px solid var(--color-border); border-radius: var(--radius-md); font-size: var(--text-sm); font-weight: 500; display: inline-flex; align-items: center; gap: var(--space-2); }
-.analyze-btn:hover { background: var(--color-surface-dynamic); }
-.analyze-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-.analyzing-pulse { display: none; }
-.analyzing-pulse.visible { display: inline-flex; align-items: center; gap: var(--space-2); font-size: var(--text-xs); color: var(--color-text-muted); }
-@keyframes analyzing { 0%,100%{opacity:1} 50%{opacity:0.3} }
-.analyzing-dot { width:6px;height:6px;border-radius:50%;background:var(--color-primary);animation:analyzing 1s ease infinite; }
-.analyzing-dot:nth-child(2){animation-delay:.2s}
-.analyzing-dot:nth-child(3){animation-delay:.4s}
+.waveform-wrap{display:none;margin-top:var(--space-6)}
+.waveform-wrap.visible{display:block}
+.wf-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-3)}
+.wf-title{font-size:var(--text-sm);font-weight:600;color:var(--color-text-muted)}
+.wf-legend{display:flex;gap:var(--space-4);font-size:var(--text-xs);color:var(--color-text-muted)}
+.wf-legend span{display:flex;align-items:center;gap:var(--space-1)}
+.dot-keep{width:8px;height:8px;border-radius:2px;background:var(--color-primary);opacity:.7}
+.dot-cut{width:8px;height:8px;border-radius:2px;background:var(--color-error);opacity:.7}
+.canvas-outer{position:relative;background:var(--color-surface-offset);border-radius:var(--radius-lg);overflow:hidden;border:1px solid oklch(from var(--color-text) l c h/.06)}
+#waveCanvas{display:block;width:100%;cursor:crosshair}
+.wf-stats{display:flex;flex-wrap:wrap;gap:var(--space-4) var(--space-6);margin-top:var(--space-3);font-size:var(--text-sm)}
+.wf-stat strong{font-weight:600}
+.analyzing-row{display:flex;align-items:center;gap:var(--space-2);font-size:var(--text-sm);color:var(--color-text-muted);padding:var(--space-3) 0}
+.spin{animation:spin .8s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ===== PROCESS ===== */
+.process-row{display:flex;gap:var(--space-3);align-items:center;flex-wrap:wrap}
+.progress-wrap{flex:1;min-width:160px;height:6px;background:var(--color-surface-offset);border-radius:var(--radius-full);overflow:hidden;display:none}
+.progress-bar{height:100%;background:var(--color-primary);width:0%;transition:width .3s}
+#processMsg{font-size:var(--text-sm);color:var(--color-text-muted)}
+.download-btn{display:none;gap:var(--space-2);align-items:center;padding:var(--space-3) var(--space-5);border-radius:var(--radius-lg);background:var(--color-success);color:#fff;font-weight:600;font-size:var(--text-sm)}
+.download-btn.visible{display:flex}
+.download-btn:hover{filter:brightness(1.1)}
+
+/* ===== SERVER DETAILS ===== */
+.server-details{margin-bottom:var(--space-4)}
+.server-details summary{list-style:none;cursor:pointer;padding:var(--space-3) var(--space-4);background:var(--color-surface);border:1px solid oklch(from var(--color-text) l c h/.08);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm)}
+.server-details summary::-webkit-details-marker{display:none}
+.server-summary-inner{display:flex;align-items:center;gap:var(--space-2);font-size:var(--text-sm);color:var(--color-text-muted)}
+.chevron{margin-left:auto;transition:transform var(--transition);color:var(--color-text-faint)}
+.server-details[open] .chevron{transform:rotate(180deg)}
+.server-body{background:var(--color-surface);border:1px solid oklch(from var(--color-text) l c h/.08);border-top:none;border-radius:0 0 var(--radius-lg) var(--radius-lg);padding:var(--space-4);box-shadow:var(--shadow-sm)}
+.status-dot.ok ~ * {color:var(--color-success)}
 </style>
 </head>
 <body>
-
-<header>
-  <div class="wrap header-inner">
+<div class="app">
+  <header>
     <div class="logo">
-      <svg aria-label="SilenceCut logo" width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect width="32" height="32" rx="8" fill="var(--color-primary)" opacity=".15"/>
-        <rect x="4" y="14" width="4" height="12" rx="2" fill="var(--color-primary)"/>
-        <rect x="10" y="9" width="4" height="17" rx="2" fill="var(--color-primary)"/>
-        <rect x="16" y="6" width="4" height="20" rx="2" fill="var(--color-primary)"/>
-        <rect x="22" y="11" width="4" height="15" rx="2" fill="var(--color-primary)" opacity=".4"/>
-        <line x1="21" y1="4" x2="29" y2="28" stroke="var(--color-error)" stroke-width="2" stroke-linecap="round"/>
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-label="SilenceCut">
+        <rect x="2" y="10" width="4" height="8" rx="1" fill="currentColor" opacity=".4"/>
+        <rect x="8" y="5" width="4" height="18" rx="1" fill="currentColor" opacity=".6"/>
+        <rect x="14" y="8" width="4" height="12" rx="1" fill="currentColor"/>
+        <rect x="20" y="11" width="4" height="6" rx="1" fill="currentColor" opacity=".4"/>
+        <line x1="1" y1="26" x2="27" y2="2" stroke="var(--color-error)" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="3 2"/>
       </svg>
-      <span class="logo-text">Silence<span>Cut</span></span>
+      SilenceCut
     </div>
     <button class="theme-btn" data-theme-toggle aria-label="Переключить тему">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
     </button>
-  </div>
-</header>
+  </header>
 
-<main>
-<div class="wrap">
-
-  <!-- Server -->
-  <div class="server-row" style="display:none">
-    <input id="serverUrl" class="server-input" type="url"
-      placeholder="https://your-app.up.railway.app" autocomplete="off"
-      value="https://web-production-76b2f0.up.railway.app">
-    <button class="btn-check" onclick="checkServer()">Проверить</button>
-    <div class="server-status">
-      <div class="dot" id="serverDot"></div>
-      <span id="serverMsg">не проверен</span>
+  <!-- SERVER -->
+  <details class="server-details">
+    <summary>
+      <span class="server-summary-inner">
+        <span class="status-dot" id="serverDot"></span>
+        <span id="serverSummaryText">Сервер не настроен</span>
+        <svg class="chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </span>
+    </summary>
+    <div class="server-body">
+      <div class="server-row">
+        <input type="url" id="serverUrl" placeholder="https://xxx.up.railway.app" value="">
+        <button class="btn btn-ghost" onclick="checkServer()">Проверить</button>
+      </div>
+      <div id="statusMsg" style="margin-top:var(--space-2);font-size:var(--text-xs);color:var(--color-text-muted)">Укажите URL Railway-сервера</div>
     </div>
+  </details>
+
+  <!-- UPLOAD -->
+  <div class="card">
+    <div class="card-title">Видео</div>
+    <div class="dropzone" id="dropzone" onclick="fileInput.click()" ondragover="e=>{e.preventDefault();this.classList.add('over')}" ondragleave="this.classList.remove('over')" ondrop="onDrop(event)">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <p><strong>Перетащите видео</strong> или кликните для выбора</p>
+      <p>MP4, MOV, AVI, MKV — до 2 ГБ</p>
+      <div id="fileBadge" style="display:none" class="file-badge">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <span id="fileName">—</span>
+      </div>
+    </div>
+    <input type="file" id="fileInput" accept="video/*,audio/*" style="display:none" onchange="onFileSelect(this.files[0])">
   </div>
 
-  <!-- Drop zone -->
-  <div class="dropzone" id="dropzone">
-    <input type="file" id="fileInput" accept="video/*,.mp4,.mov,.mkv,.avi,.webm">
-    <svg class="dz-icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5">
-      <rect x="6" y="10" width="36" height="28" rx="4"/>
-      <circle cx="18" cy="22" r="4"/>
-      <path d="M6 32l10-8 8 6 6-5 12 9"/>
-    </svg>
-    <div class="dz-title">Перетащи или выбери видео</div>
-    <div class="dz-sub">MP4, MOV, MKV, AVI, WebM — любой формат</div>
-    <div class="file-info" id="fileInfo" style="display:none">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><polyline points="14 2 14 8 20 8"/></svg>
-      <span id="fileInfoText">—</span>
-    </div>
-  </div>
-
-  <!-- Settings -->
-  <div class="settings">
-    <div class="settings-head" onclick="toggleSettings()">
-      <h2>Параметры</h2>
-      <svg class="chevron" id="chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-    </div>
-    <div class="settings-body" id="settingsBody">
-      <div class="field">
-        <label>Порог тишины <span class="field-val" id="threshVal">-40 дБ</span></label>
+  <!-- PARAMS -->
+  <div class="card">
+    <div class="card-title">Параметры</div>
+    <div class="params-grid">
+      <div class="param-item">
+        <label>Порог громкости <span><span class="param-val" id="threshVal">-40</span> dB</span></label>
         <input type="range" id="threshold" min="-70" max="-20" step="1" value="-40"
-          oninput="document.getElementById('threshVal').textContent=this.value+' дБ'">
-        <div class="field-hint">Ниже = более тихие звуки сохраняются</div>
+          oninput="threshVal.textContent=this.value; onSliderChange('analyze')">
       </div>
-      <div class="field">
-        <label>Мин. длина паузы <span class="field-val" id="silenceVal">0.5 с</span></label>
+      <div class="param-item">
+        <label>Мин. тишина <span><span class="param-val" id="silenceVal">0.5</span> с</span></label>
         <input type="range" id="minSilence" min="0.1" max="3" step="0.1" value="0.5"
-          oninput="document.getElementById('silenceVal').textContent=this.value+' с'">
-        <div class="field-hint">Паузы короче этого — не вырезаются</div>
+          oninput="silenceVal.textContent=this.value; onSliderChange('analyze')">
       </div>
-      <div class="field">
-        <label>Отступ вокруг речи <span class="field-val" id="padVal">0.10 с</span></label>
+      <div class="param-item">
+        <label>Отступ (pad) <span><span class="param-val" id="padVal">0.1</span> с</span></label>
         <input type="range" id="pad" min="0" max="0.5" step="0.01" value="0.1"
-          oninput="document.getElementById('padVal').textContent=parseFloat(this.value).toFixed(2)+' с'">
-        <div class="field-hint">Небольшой «хвост» для естественного звучания</div>
+          oninput="padVal.textContent=(+this.value).toFixed(2); onSliderChange('redraw')">
       </div>
-      <div class="field">
-        <label>Макс. сохраняемая тишина <span class="field-val" id="keepVal">0.5 с</span></label>
+      <div class="param-item">
+        <label>Макс. тишина <span><span class="param-val" id="keepVal">0.5</span> с</span></label>
         <input type="range" id="maxKeep" min="0" max="2" step="0.1" value="0.5"
-          oninput="document.getElementById('keepVal').textContent=this.value+' с'">
-        <div class="field-hint">Длинные паузы заменяются этим значением</div>
+          oninput="keepVal.textContent=this.value; onSliderChange('redraw')">
       </div>
     </div>
   </div>
 
-  <!-- Error -->
-  <div class="error-box" id="errorBox"></div>
+  <!-- WAVEFORM -->
+  <div class="card">
+    <div class="card-title">Анализ звуковой дорожки</div>
 
-  <!-- Go button -->
-  <button class="btn-primary" id="goBtn" onclick="startProcessing()" disabled>
-    Вырезать тишину → MP4
-  </button>
-
-  <!-- Progress -->
-  <div class="progress-card" id="progressCard">
-    <div class="progress-top">
-      <span class="progress-label">Обработка…</span>
-      <span class="progress-pct" id="pctText">0%</span>
-    </div>
-    <div class="bar-track"><div class="bar-fill" id="barFill"></div></div>
-    <div class="progress-log" id="logText">—</div>
-  </div>
-
-  <!-- Result -->
-  <div class="result-card" id="resultCard">
-    <div class="stats">
-      <div class="stat">
-        <div class="stat-val" id="statOrig">—</div>
-        <div class="stat-label">Было</div>
-      </div>
-      <div class="stat">
-        <div class="stat-val" id="statNew">—</div>
-        <div class="stat-label">Стало</div>
-      </div>
-      <div class="stat">
-        <div class="stat-val" id="statSaved">—</div>
-        <div class="stat-label">Вырезано</div>
-      </div>
-    </div>
-    <button class="btn-dl" id="dlBtn" onclick="downloadResult()">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      Скачать MP4
+    <!-- Кнопка анализа -->
+    <button class="btn btn-ghost" id="analyzeBtn" disabled onclick="runAnalyze()" style="margin-bottom:var(--space-4)">
+      ▶ Анализировать
     </button>
+
+    <!-- Пока идёт анализ -->
+    <div id="analyzingRow" class="analyzing-row" style="display:none">
+      <span class="spin">⟳</span> Анализируем звук...
+    </div>
+
+    <!-- Waveform (появляется после анализа) -->
+    <div class="waveform-wrap" id="waveformWrap">
+      <div class="wf-header">
+        <div class="wf-title">Звуковая дорожка</div>
+        <div class="wf-legend">
+          <span><span class="dot-keep"></span>остаётся</span>
+          <span><span class="dot-cut"></span>вырезается</span>
+        </div>
+      </div>
+      <div class="canvas-outer">
+        <canvas id="waveCanvas" height="140"></canvas>
+      </div>
+      <div class="wf-stats" id="wfStats"></div>
+    </div>
   </div>
 
+  <!-- PROCESS -->
+  <div class="card">
+    <div class="card-title">Экспорт MP4</div>
+    <div class="process-row">
+      <button class="btn btn-primary" id="processBtn" disabled onclick="runProcess()">
+        Вырезать тишину → MP4
+      </button>
+      <div class="progress-wrap" id="progressWrap">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+    </div>
+    <div id="processMsg" style="margin-top:var(--space-3)"></div>
+    <a id="downloadBtn" class="download-btn" download="output.mp4">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Скачать MP4
+    </a>
+  </div>
 </div>
-</main>
-
-<footer>
-  <div class="wrap">
-    SilenceCut — бэкенд на <a href="https://railway.app" target="_blank" rel="noopener">Railway</a> +
-    <a href="https://ffmpeg.org" target="_blank" rel="noopener">FFmpeg</a>.
-    Видео обрабатывается на твоём сервере.
-  </div>
-</footer>
 
 <script>
+// ===== STATE =====
+let selectedFile = null;
+let serverOk = false;
+let wfSamples = null;     // Float32Array — амплитуды
+let wfDuration = 0;       // секунды
+let wfRawSilence = null;  // [{start,end}] — с сервера
+let hoverT = -1;          // секунды под курсором
+let debounceAnalyze = null;
+let debounceRedraw  = null;
+
+// ===== THEME TOGGLE =====
 (function(){
-  const r=document.documentElement;
-  const t=document.querySelector('[data-theme-toggle]');
-  let d=matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';
-  r.setAttribute('data-theme',d);
-  if(t)t.addEventListener('click',()=>{
-    d=d==='dark'?'light':'dark';
-    r.setAttribute('data-theme',d);
-    t.innerHTML=d==='dark'
-      ?'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>'
-      :'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>';
-  });
+  const btn = document.querySelector('[data-theme-toggle]');
+  const html = document.documentElement;
+  const setTheme = t => {
+    html.setAttribute('data-theme', t);
+    btn.innerHTML = t === 'dark'
+      ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>'
+      : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>';
+    if (wfSamples) requestAnimationFrame(drawWave);
+  };
+  let d = matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light';
+  setTheme(d);
+  btn.addEventListener('click', () => setTheme(d === 'dark' ? (d='light') : (d='dark')));
 })();
 
-let currentFile=null, currentTaskId=null, pollTimer=null;
-const $ = id => document.getElementById(id);
+// ===== SERVER =====
+function getUrl() { return document.getElementById('serverUrl').value.trim().replace(/\/$/, ''); }
 
-// ── File input ──
-const dz=$('dropzone'), fi=$('fileInput');
-fi.addEventListener('change',()=>{ if(fi.files[0]) setFile(fi.files[0]); });
-dz.addEventListener('dragover',e=>{ e.preventDefault(); dz.classList.add('drag'); });
-dz.addEventListener('dragleave',()=>dz.classList.remove('drag'));
-dz.addEventListener('drop',e=>{
-  e.preventDefault(); dz.classList.remove('drag');
-  if(e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
-});
-
-function setFile(f){
-  currentFile=f;
-  const mb=(f.size/1024/1024).toFixed(1);
-  $('fileInfoText').textContent=`${f.name}  ·  ${mb} МБ`;
-  $('fileInfo').style.display='flex';
-  updateGoBtn();
-}
-
-// ── Server check ──
-function serverUrl(){ return $('serverUrl').value.trim().replace(/\/$/,''); }
-
-function setDot(state,msg){
-  const d=$('serverDot');
-  d.className='dot '+(state||'');
-  $('serverMsg').textContent=msg;
-}
-
-async function checkServer(){
-  const url=serverUrl();
-  if(!url){ setDot('err','введи URL'); return; }
-  setDot('spin','проверяю…');
-  try{
-    const r=await fetch(url+'/health',{signal:AbortSignal.timeout(8000)});
-    const j=await r.json();
-    if(j.ffmpeg){ setDot('ok','FFmpeg работает ✓'); }
-    else{ setDot('err','сервер ок, но FFmpeg не найден'); }
-  }catch(e){
-    setDot('err','нет ответа — проверь URL');
+async function checkServer() {
+  const dot = document.getElementById('serverDot');
+  const msg = document.getElementById('statusMsg');
+  const summary = document.getElementById('serverSummaryText');
+  const url = getUrl();
+  if (!url) { msg.textContent = 'Введите URL'; return; }
+  dot.className = 'status-dot checking';
+  msg.textContent = 'Проверяем...';
+  summary.textContent = 'Проверяем...';
+  try {
+    const r = await fetch(url + '/health', { signal: AbortSignal.timeout(6000) });
+    const j = await r.json();
+    serverOk = true;
+    dot.className = 'status-dot ok';
+    msg.textContent = '✓ ' + (j.ffmpeg || 'FFmpeg найден');
+    summary.textContent = url.replace('https://','').split('/')[0];
+    // Auto-close details after success
+    document.querySelector('.server-details').removeAttribute('open');
+  } catch(e) {
+    serverOk = false;
+    dot.className = 'status-dot err';
+    msg.textContent = '✗ ' + e.message;
+    summary.textContent = 'Ошибка подключения';
   }
-  updateGoBtn();
+  updateBtns();
 }
 
-function updateGoBtn(){
-  $('goBtn').disabled=!(currentFile && $('serverDot').classList.contains('ok'));
+// ===== FILE =====
+function onDrop(e) {
+  e.preventDefault();
+  document.getElementById('dropzone').classList.remove('over');
+  const f = e.dataTransfer.files[0];
+  if (f) onFileSelect(f);
+}
+function onFileSelect(f) {
+  if (!f) return;
+  selectedFile = f;
+  document.getElementById('fileName').textContent = f.name + ' (' + (f.size/1024/1024).toFixed(1) + ' МБ)';
+  document.getElementById('fileBadge').style.display = 'inline-flex';
+  updateBtns();
+}
+function updateBtns() {
+  document.getElementById('analyzeBtn').disabled  = !(selectedFile && serverOk);
+  document.getElementById('processBtn').disabled  = !(selectedFile && serverOk);
 }
 
-$('serverUrl').addEventListener('input',()=>{ setDot('','не проверен'); updateGoBtn(); });
-
-// ── Settings toggle ──
-let settingsOpen=true;
-function toggleSettings(){
-  settingsOpen=!settingsOpen;
-  $('settingsBody').classList.toggle('hidden',!settingsOpen);
-  $('chevron').style.transform=settingsOpen?'':'rotate(-90deg)';
-}
-
-// ── Processing ──
-function fmtTime(sec){
-  if(sec<60) return sec.toFixed(1)+'с';
-  const m=Math.floor(sec/60), s=Math.round(sec%60);
-  return `${m}м ${s}с`;
-}
-
-async function startProcessing(){
-  hideError();
-  $('resultCard').classList.remove('show');
-  $('progressCard').classList.add('show');
-  $('goBtn').disabled=true;
-  setProgress(5,'Загрузка файла…');
-
-  const fd=new FormData();
-  fd.append('file',currentFile);
-  fd.append('threshold',$('threshold').value);
-  fd.append('min_silence',$('minSilence').value);
-  fd.append('pad',$('pad').value);
-  fd.append('max_keep',$('maxKeep').value);
-
-  try{
-    const res=await fetch(serverUrl()+'/process',{method:'POST',body:fd,
-      signal:AbortSignal.timeout(300000)});
-    if(!res.ok){ const t=await res.text(); throw new Error(t); }
-    const {task_id}=await res.json();
-    currentTaskId=task_id;
-    pollTimer=setInterval(pollStatus,1200);
-  }catch(e){
-    showError('Ошибка загрузки: '+e.message);
-    resetUI();
+// ===== SLIDER CHANGE =====
+function onSliderChange(mode) {
+  if (!wfSamples) return;
+  if (mode === 'analyze') {
+    clearTimeout(debounceAnalyze);
+    debounceAnalyze = setTimeout(runAnalyze, 900);
+  } else {
+    clearTimeout(debounceRedraw);
+    debounceRedraw = setTimeout(applyAndDraw, 60);
   }
 }
 
-async function pollStatus(){
-  if(!currentTaskId) return;
-  try{
-    const r=await fetch(serverUrl()+'/status/'+currentTaskId,
-      {signal:AbortSignal.timeout(10000)});
-    const j=await r.json();
-    setProgress(j.progress||0, j.log||'…');
-    if(j.status==='done'){
-      clearInterval(pollTimer);
-      showResult(j);
-    } else if(j.status==='error'){
-      clearInterval(pollTimer);
-      showError(j.detail||'Неизвестная ошибка сервера');
-      resetUI();
-    }
-  }catch(e){ /* network glitch, retry */ }
-}
-
-function setProgress(pct,msg){
-  $('barFill').style.width=pct+'%';
-  $('pctText').textContent=pct+'%';
-  $('logText').textContent=msg;
-}
-
-function showResult(j){
-  $('statOrig').textContent=fmtTime(j.original_duration||0);
-  $('statNew').textContent=fmtTime(j.output_duration||0);
-  $('statSaved').textContent=(j.removed_pct||0).toFixed(1)+'%';
-  $('resultCard').classList.add('show');
-  $('goBtn').disabled=false;
-}
-
-function downloadResult(){
-  if(!currentTaskId) return;
-  const a=document.createElement('a');
-  a.href=serverUrl()+'/download/'+currentTaskId;
-  a.download='output_cut.mp4';
-  a.target='_blank';
-  a.click();
-}
-
-function showError(msg){
-  const b=$('errorBox');
-  b.textContent='⚠ '+msg;
-  b.classList.add('show');
-}
-function hideError(){ $('errorBox').classList.remove('show'); }
-function resetUI(){
-  $('goBtn').disabled=false;
-  setProgress(0,'—');
-  $('progressCard').classList.remove('show');
-}
-// Auto-connect on load
-window.addEventListener('load', () => { checkServer(); });
-
-// ===== WAVEFORM =====
-let waveformData = null;
-let silenceData = null;
-let wfDuration = 0;
-
-function updateAnalyzeBtn() {
-  const ok = document.getElementById('serverDot').classList.contains('ok');
-  document.getElementById('analyzeBtn').disabled = !(selectedFile && ok);
-}
-
-// Hook into existing updateSubmitBtn
-const _origUpdateSubmitBtn = updateSubmitBtn;
-function updateSubmitBtn() {
-  _origUpdateSubmitBtn();
-  updateAnalyzeBtn();
-}
-
-async function analyzeAudio() {
-  const url = getServerUrl();
+// ===== ANALYZE =====
+async function runAnalyze() {
+  const url = getUrl();
   if (!url || !selectedFile) return;
-
   document.getElementById('analyzeBtn').disabled = true;
-  document.getElementById('analyzingPulse').classList.add('visible');
-  document.getElementById('waveformSection').classList.remove('visible');
+  document.getElementById('analyzingRow').style.display = 'flex';
+  document.getElementById('waveformWrap').classList.remove('visible');
 
   const fd = new FormData();
   fd.append('file', selectedFile);
@@ -533,129 +381,309 @@ async function analyzeAudio() {
   fd.append('min_silence', document.getElementById('minSilence').value);
 
   try {
-    const res = await fetch(url + '/analyze', { method: 'POST', body: fd });
-    if (!res.ok) throw new Error('Ошибка сервера ' + res.status);
-    const data = await res.json();
+    const r = await fetch(url + '/analyze', { method:'POST', body:fd });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const data = await r.json();
 
-    waveformData = data.waveform;
-    silenceData = data.silence;
+    // data.waveform — массив 0..1, data.silence — [{start,end}], data.duration — float
+    wfSamples = data.waveform;
+    wfRawSilence = data.silence || [];
     wfDuration = data.duration;
 
-    drawWaveform();
-    renderWaveformStats(data);
-
-    document.getElementById('waveformSection').classList.add('visible');
+    applyAndDraw();
+    document.getElementById('waveformWrap').classList.add('visible');
   } catch(e) {
     alert('Ошибка анализа: ' + e.message);
   } finally {
     document.getElementById('analyzeBtn').disabled = false;
-    document.getElementById('analyzingPulse').classList.remove('visible');
+    document.getElementById('analyzingRow').style.display = 'none';
   }
 }
 
-function drawWaveform() {
-  const canvas = document.getElementById('waveformCanvas');
-  const dpr = window.devicePixelRatio || 1;
-  const rect = canvas.parentElement.getBoundingClientRect();
-  const W = rect.width || 700;
-  const H = 120;
+// ===== COMPUTE LOUD/CUT segs from raw silence + pad + maxKeep =====
+function computeSegs() {
+  const pad     = parseFloat(document.getElementById('pad').value) || 0.1;
+  const maxKeep = parseFloat(document.getElementById('maxKeep').value) || 0.5;
+  const raw = wfRawSilence || [];
+  const D = wfDuration;
 
-  canvas.width = W * dpr;
-  canvas.height = H * dpr;
-  canvas.style.width = W + 'px';
-  canvas.style.height = H + 'px';
+  // Silence segs after shrinking by pad
+  const shrunken = raw
+    .map(s => ({ start: s.start + pad, end: s.end - pad }))
+    .filter(s => s.end - s.start > 0.05);
+
+  // Build loud segs (gaps between shrunken silence)
+  let loud = [];
+  let prev = 0;
+  for (const s of shrunken) {
+    if (s.start - prev > 0.02) loud.push({ start: prev, end: s.start });
+    prev = s.end;
+  }
+  if (D - prev > 0.02) loud.push({ start: prev, end: D });
+
+  // Merge loud segs separated by ≤ maxKeep
+  const merged = [];
+  for (const seg of loud) {
+    if (merged.length && seg.start - merged[merged.length-1].end <= maxKeep + 0.001)
+      merged[merged.length-1].end = seg.end;
+    else merged.push({ ...seg });
+  }
+
+  // Cut = inverse of loud
+  const cut = [];
+  let p = 0;
+  for (const s of merged) {
+    if (s.start - p > 0.02) cut.push({ start: p, end: s.start });
+    p = s.end;
+  }
+  if (D - p > 0.02) cut.push({ start: p, end: D });
+
+  return { loud: merged, cut };
+}
+
+// ===== DRAW WAVE =====
+function applyAndDraw() {
+  if (!wfSamples || !wfDuration) return;
+  const { loud, cut } = computeSegs();
+  drawWave(loud, cut);
+  renderStats(loud, cut);
+}
+
+function fmtTime(s) {
+  const m = Math.floor(s / 60);
+  const sec = (s % 60).toFixed(1);
+  return `${m}:${sec.padStart(4,'0')}`;
+}
+
+function drawWave(loud, cut) {
+  const canvas = document.getElementById('waveCanvas');
+  const dpr = window.devicePixelRatio || 1;
+  const cssW = canvas.parentElement.getBoundingClientRect().width || 700;
+  const cssH = 140;
+
+  // Always resize
+  canvas.width  = Math.round(cssW * dpr);
+  canvas.height = Math.round(cssH * dpr);
+  canvas.style.width  = cssW + 'px';
+  canvas.style.height = cssH + 'px';
 
   const ctx = canvas.getContext('2d');
   ctx.scale(dpr, dpr);
+  const W = cssW, H = cssH;
 
-  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  const bgColor    = isDark ? '#151412' : '#f9f8f5';
-  const loudColor  = isDark ? '#4f98a3' : '#01696f';
-  const silentColor= isDark ? 'rgba(209,99,167,0.55)' : 'rgba(161,44,123,0.45)';
-  const midLine    = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+  const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+
+  // Colors
+  const CLR = {
+    bg:         dark ? '#1d1c1a' : '#f3f0ec',
+    zoneLoud:   dark ? 'rgba(79,152,163,0.12)'  : 'rgba(1,105,111,0.08)',
+    zoneCut:    dark ? 'rgba(209,99,167,0.18)'  : 'rgba(161,44,123,0.12)',
+    barLoud:    dark ? '#4f98a3' : '#01696f',
+    barCut:     dark ? 'rgba(209,99,167,0.65)'  : 'rgba(161,44,123,0.55)',
+    cutBorder:  dark ? 'rgba(209,99,167,0.55)'  : 'rgba(161,44,123,0.45)',
+    midline:    dark ? 'rgba(255,255,255,0.06)'  : 'rgba(0,0,0,0.06)',
+    grid:       dark ? 'rgba(255,255,255,0.04)'  : 'rgba(0,0,0,0.035)',
+    tick:       dark ? 'rgba(255,255,255,0.3)'   : 'rgba(0,0,0,0.25)',
+    scissors:   dark ? 'rgba(209,99,167,0.9)'    : 'rgba(140,30,105,0.9)',
+    tooltipBg:  dark ? 'rgba(29,28,26,0.95)'     : 'rgba(249,248,245,0.97)',
+    tooltipFg:  dark ? '#cdccca' : '#28251d',
+    hoverLine:  dark ? 'rgba(255,255,255,0.2)'   : 'rgba(0,0,0,0.15)',
+  };
+
+  const TICK_H = 16; // bottom time axis height
+  const WAVE_Y = 0;
+  const WAVE_H = H - TICK_H;
+  const MID = WAVE_Y + WAVE_H / 2;
 
   // Background
-  ctx.fillStyle = bgColor;
+  ctx.fillStyle = CLR.bg;
   ctx.fillRect(0, 0, W, H);
 
-  // Mid line
-  ctx.fillStyle = midLine;
-  ctx.fillRect(0, H/2 - 0.5, W, 1);
+  // Zone backgrounds
+  const paintZones = (segs, color) => {
+    ctx.fillStyle = color;
+    for (const s of segs) {
+      const x1 = (s.start / wfDuration) * W;
+      const x2 = (s.end   / wfDuration) * W;
+      ctx.fillRect(x1, WAVE_Y, x2 - x1, WAVE_H);
+    }
+  };
+  paintZones(loud, CLR.zoneLoud);
+  paintZones(cut,  CLR.zoneCut);
 
-  if (!waveformData || !waveformData.length) return;
+  // Grid lines
+  const gridStep = wfDuration <= 30 ? 5 : wfDuration <= 120 ? 10 : wfDuration <= 600 ? 30 : 60;
+  ctx.strokeStyle = CLR.grid;
+  ctx.lineWidth = 1;
+  for (let t = gridStep; t < wfDuration; t += gridStep) {
+    const x = (t / wfDuration) * W;
+    ctx.beginPath(); ctx.moveTo(x, WAVE_Y); ctx.lineTo(x, WAVE_Y + WAVE_H); ctx.stroke();
+  }
 
-  const n = waveformData.length;
-  const barW = Math.max(1, W / n);
+  // Midline
+  ctx.fillStyle = CLR.midline;
+  ctx.fillRect(0, MID - 0.5, W, 1);
 
-  // Draw silence regions first (background highlights)
-  if (silenceData && wfDuration > 0) {
-    ctx.fillStyle = silentColor;
-    for (const seg of silenceData) {
-      const x1 = (seg.start / wfDuration) * W;
-      const x2 = (seg.end   / wfDuration) * W;
-      ctx.fillRect(x1, 0, x2 - x1, H);
+  // Waveform bars
+  const N = wfSamples.length;
+  const barW = W / N;
+  for (let i = 0; i < N; i++) {
+    const x = (i / N) * W;
+    const t = (i / N) * wfDuration;
+    const amp = wfSamples[i];
+    const bH = Math.max(2, amp * WAVE_H * 0.88);
+    const inCut = cut.some(s => t >= s.start && t < s.end);
+    ctx.fillStyle = inCut ? CLR.barCut : CLR.barLoud;
+    ctx.fillRect(x, MID - bH / 2, Math.max(1, barW - 0.5), bH);
+  }
+
+  // Cut zone borders + scissors labels
+  ctx.font = `500 10px Inter,sans-serif`;
+  ctx.textBaseline = 'top';
+  for (const s of cut) {
+    const x1 = (s.start / wfDuration) * W;
+    const x2 = (s.end   / wfDuration) * W;
+    const zW  = x2 - x1;
+    // Dashed border lines
+    ctx.strokeStyle = CLR.cutBorder;
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([3, 3]);
+    [x1, x2].forEach(x => {
+      ctx.beginPath(); ctx.moveTo(x, WAVE_Y); ctx.lineTo(x, WAVE_Y + WAVE_H); ctx.stroke();
+    });
+    ctx.setLineDash([]);
+    // Label
+    if (zW >= 14) {
+      const dur = s.end - s.start;
+      const label = zW > 42 ? `✂ ${dur.toFixed(1)}s` : '✂';
+      ctx.fillStyle = CLR.scissors;
+      ctx.fillText(label, x1 + 3, WAVE_Y + 3);
     }
   }
 
-  // Draw waveform bars
-  for (let i = 0; i < n; i++) {
-    const x = (i / n) * W;
-    const amp = waveformData[i];
-    const barH = Math.max(2, amp * (H * 0.9));
-
-    // Color: red if inside silence, teal otherwise
-    let inSilence = false;
-    if (silenceData && wfDuration > 0) {
-      const t = (i / n) * wfDuration;
-      inSilence = silenceData.some(s => t >= s.start && t <= s.end);
-    }
-
-    ctx.fillStyle = inSilence
-      ? (isDark ? 'rgba(209,99,167,0.4)' : 'rgba(161,44,123,0.35)')
-      : loudColor;
-
-    // Symmetric bar around center
-    ctx.fillRect(x, H/2 - barH/2, Math.max(1, barW - 0.5), barH);
+  // Time axis ticks
+  ctx.fillStyle = CLR.tick;
+  ctx.font = `10px Inter,sans-serif`;
+  ctx.textBaseline = 'bottom';
+  for (let t = 0; t <= wfDuration; t += gridStep) {
+    const x = (t / wfDuration) * W;
+    const lbl = fmtTime(t);
+    const tw = ctx.measureText(lbl).width;
+    if (x + tw + 4 > W && t > 0) continue;
+    ctx.fillText(lbl, x + 2, H - 1);
   }
+  // Always show end time
+  const endLbl = fmtTime(wfDuration);
+  const ew = ctx.measureText(endLbl).width;
+  ctx.fillText(endLbl, W - ew - 2, H - 1);
 
-  // Update time labels
-  document.getElementById('wfMidTime').textContent = formatTime(wfDuration / 2);
-  document.getElementById('wfEndTime').textContent  = formatTime(wfDuration);
+  // Hover cursor + tooltip
+  if (hoverT >= 0 && hoverT <= wfDuration) {
+    const hX = (hoverT / wfDuration) * W;
+    ctx.strokeStyle = CLR.hoverLine;
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(hX, WAVE_Y); ctx.lineTo(hX, WAVE_Y + WAVE_H); ctx.stroke();
+
+    const inCutNow = cut.some(s => hoverT >= s.start && hoverT < s.end);
+    const label = `${fmtTime(hoverT)}  ${inCutNow ? '✂ вырезается' : '✓ остаётся'}`;
+    ctx.font = `bold 11px Inter,sans-serif`;
+    ctx.textBaseline = 'top';
+    const tw = ctx.measureText(label).width + 14;
+    const tx = Math.min(hX + 8, W - tw - 4);
+    const ty = WAVE_Y + 6;
+    ctx.fillStyle = CLR.tooltipBg;
+    ctx.beginPath();
+    ctx.roundRect(tx, ty, tw, 20, 4);
+    ctx.fill();
+    ctx.fillStyle = CLR.tooltipFg;
+    ctx.fillText(label, tx + 7, ty + 4);
+  }
 }
 
-function renderWaveformStats(data) {
-  const totalSilence = (data.silence || []).reduce((acc, s) => acc + (s.end - s.start), 0);
-  const pct = data.duration > 0 ? (totalSilence / data.duration * 100).toFixed(1) : 0;
-  const loudTime = data.duration - totalSilence;
-
-  document.getElementById('waveformStats').innerHTML = `
-    <div class="wstat">Длина: <strong>${formatTime(data.duration)}</strong></div>
-    <div class="wstat">Тихих участков: <strong>${(data.silence||[]).length}</strong></div>
-    <div class="wstat">Тишина: <strong>${formatTime(totalSilence)} (${pct}%)</strong></div>
-    <div class="wstat">Речь/звук: <strong>${formatTime(loudTime)}</strong></div>
+function renderStats(loud, cut) {
+  const loudDur = loud.reduce((a, s) => a + s.end - s.start, 0);
+  const cutDur  = cut.reduce((a,  s) => a + s.end - s.start, 0);
+  const pct = wfDuration > 0 ? (cutDur / wfDuration * 100).toFixed(1) : 0;
+  document.getElementById('wfStats').innerHTML = `
+    <div class="wf-stat">Длина: <strong>${fmtTime(wfDuration)}</strong></div>
+    <div class="wf-stat">Вырезается: <strong style="color:var(--color-error)">${fmtTime(cutDur)} (${pct}%)</strong></div>
+    <div class="wf-stat">Остаётся: <strong style="color:var(--color-primary)">${fmtTime(loudDur)}</strong></div>
+    <div class="wf-stat">Сегментов речи: <strong>${loud.length}</strong></div>
   `;
 }
 
-// Redraw on theme toggle
-document.querySelector('[data-theme-toggle]').addEventListener('click', () => {
-  if (waveformData) setTimeout(drawWaveform, 50);
+// ===== CANVAS MOUSE =====
+document.getElementById('waveCanvas').addEventListener('mousemove', e => {
+  const rect = e.currentTarget.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  hoverT = (x / rect.width) * wfDuration;
+  if (wfSamples) {
+    const { loud, cut } = computeSegs();
+    drawWave(loud, cut);
+  }
+});
+document.getElementById('waveCanvas').addEventListener('mouseleave', () => {
+  hoverT = -1;
+  if (wfSamples) applyAndDraw();
 });
 
-// Redraw on resize
-window.addEventListener('resize', () => {
-  if (waveformData) drawWaveform();
-});
+// ===== RESIZE =====
+window.addEventListener('resize', () => { if (wfSamples) applyAndDraw(); });
 
-// Re-analyze when threshold/min_silence changes (debounced)
-let analyzeDebounce = null;
-['threshold','minSilence'].forEach(id => {
-  document.getElementById(id).addEventListener('input', () => {
-    if (!waveformData) return;
-    clearTimeout(analyzeDebounce);
-    analyzeDebounce = setTimeout(() => analyzeAudio(), 800);
+// ===== PROCESS =====
+async function runProcess() {
+  const url = getUrl();
+  if (!url || !selectedFile) return;
+  document.getElementById('processBtn').disabled = true;
+  document.getElementById('progressWrap').style.display = 'block';
+  document.getElementById('downloadBtn').classList.remove('visible');
+  document.getElementById('processMsg').textContent = 'Отправляем на сервер…';
+
+  const fd = new FormData();
+  fd.append('file', selectedFile);
+  fd.append('threshold',   document.getElementById('threshold').value);
+  fd.append('min_silence', document.getElementById('minSilence').value);
+  fd.append('pad',         document.getElementById('pad').value);
+  fd.append('max_keep',    document.getElementById('maxKeep').value);
+
+  try {
+    document.getElementById('progressBar').style.width = '30%';
+    document.getElementById('processMsg').textContent = 'Обрабатываем FFmpeg…';
+    const r = await fetch(url + '/process', { method:'POST', body:fd });
+    if (!r.ok) throw new Error('HTTP ' + r.status + ': ' + await r.text());
+    document.getElementById('progressBar').style.width = '90%';
+    const blob = await r.blob();
+    document.getElementById('progressBar').style.width = '100%';
+    const objUrl = URL.createObjectURL(blob);
+    const a = document.getElementById('downloadBtn');
+    a.href = objUrl;
+    a.download = selectedFile.name.replace(/\.[^.]+$/, '') + '_cut.mp4';
+    a.classList.add('visible');
+    document.getElementById('processMsg').textContent = '✓ Готово!';
+  } catch(e) {
+    document.getElementById('processMsg').textContent = '✗ Ошибка: ' + e.message;
+  } finally {
+    document.getElementById('processBtn').disabled = false;
+  }
+}
+
+// ===== DEMO WAVEFORM (для теста без сервера) =====
+// Раскомментируй в браузере чтобы увидеть waveform без сервера
+/*
+(function(){
+  const N = 300;
+  const samples = Array.from({length:N}, (_,i) => {
+    const t = i/N;
+    const silence = (t > 0.15 && t < 0.28) || (t > 0.45 && t < 0.55) || (t > 0.72 && t < 0.82);
+    return silence ? Math.random()*0.04 : Math.random()*0.6 + 0.1 + Math.sin(i*0.3)*0.15;
   });
-});
-
+  wfSamples = samples;
+  wfDuration = 60;
+  wfRawSilence = [{start:9,end:16.8},{start:27,end:33},{start:43.2,end:49.2}];
+  applyAndDraw();
+  document.getElementById('waveformWrap').classList.add('visible');
+})();
+*/
 </script>
 </body>
 </html>
