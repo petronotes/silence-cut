@@ -954,6 +954,11 @@ const sourceVideo = document.getElementById('source-video');
 
 let currentFile = null;
 let audioBuffer = null;
+let previewAnalysis = null;
+let previewSegments = [];
+let hoverTime = null;
+let waveformRaf = null;
+let redrawTimer = null;
 
 dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag-over'); });
 dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
@@ -986,7 +991,10 @@ function handleFile(file) {
   }).then(buf => {
     audioBuffer = buf;
     fileMetaDisplay.textContent = `${(file.size / 1024 / 1024).toFixed(1)} МБ · ${buf.sampleRate} Hz · ${formatTime(buf.duration)}`;
-    if (document.getElementById('show-wave').checked) drawWaveform(buf);
+    buildPreviewAnalysis(buf);
+    updatePreviewFromSliders();
+    attachWaveformInteractions();
+    startWaveformPlaybackMarker();
   }).catch(err => {
     showNotif('warn', 'Аудиодорожка не найдена', 'Возможно, видео без звука. Обработка будет основана только на длительности.');
   });
@@ -1003,340 +1011,378 @@ function clearFile() {
   document.getElementById('result-panel').classList.remove('visible');
   document.getElementById('progress-panel').classList.remove('visible');
   setPipelineStep('upload');
+
+  previewAnalysis = null;
+  previewSegments = [];
+  hoverTime = null;
+  cancelAnimationFrame(waveformRaf);
+  waveformRaf = null;
+  document.getElementById('waveform-tooltip').hidden = true;
+  document.getElementById('waveform-mini-stats').textContent = 'Загрузите видео для анализа';
+  document.getElementById('stat-keep').textContent = '—';
+  document.getElementById('stat-cut').textContent = '—';
+  document.getElementById('stat-segments').textContent = '—';
+  document.getElementById('stat-hover').textContent = '—';
+  
 }
 
 // ============================
-// WAVEFORM — INTERACTIVE
+// WAVEFORM PREVIEW
 // ============================
-let _waveRmsArr = null;   // raw rms bars
-let _waveBufDur = 0;      // buffer duration
-let _waveAnimId = null;   // playhead animation
+const waveformContainer = document.getElementById('waveform-container');
+const waveformCanvas = document.getElementById('waveform-canvas');
+const waveformTooltip = document.getElementById('waveform-tooltip');
+const waveformStage = document.getElementById('waveform-stage');
 
-document.getElementById('show-wave').addEventListener('change', function() {
-  if (this.checked && audioBuffer) drawWaveform(audioBuffer);
-  else document.getElementById('waveform-container').classList.remove('visible');
+document.getElementById('show-wave').addEventListener('change', function () {
+  if (this.checked && audioBuffer) {
+    waveformContainer.classList.add('visible');
+    updatePreviewFromSliders();
+  } else {
+    waveformContainer.classList.remove('visible');
+  }
 });
 
-// Redraw when any slider changes
-['threshold','min-silence','max-keep','smoothing','pad-before','pad-after'].forEach(id => {
-  document.getElementById(id).addEventListener('input', () => {
-    if (audioBuffer && document.getElementById('show-wave').checked) {
-      _drawWaveformFromCache();
-    }
-  });
-});
-
-function drawWaveform(buf) {
-  _waveBufDur = buf.duration;
-  const canvas = document.getElementById('waveform-canvas');
-  const W = canvas.parentElement.clientWidth || 900;
-  canvas.width = W * window.devicePixelRatio;
-  canvas.style.width = W + 'px';
-
-  const numBars = Math.floor(W / 2.5);
+function buildPreviewAnalysis(buf) {
   const data = buf.getChannelData(0);
-  const blockSize = Math.max(1, Math.floor(data.length / numBars));
+  const sampleRate = buf.sampleRate;
+  const duration = buf.duration;
 
-  const rmsArr = new Float32Array(numBars);
-  for (let i = 0; i < numBars; i++) {
+  const frameSize = Math.max(256, Math.floor(sampleRate * 0.02));
+  const hopSize = Math.max(128, Math.floor(frameSize / 2));
+  const totalFrames = Math.max(1, Math.floor((data.length - frameSize) / hopSize));
+
+  const frames = new Array(totalFrames);
+  const dbValues = new Float32Array(totalFrames);
+
+  for (let i = 0; i < totalFrames; i++) {
+    const start = i * hopSize;
     let sum = 0;
-    const base = i * blockSize;
-    for (let j = 0; j < blockSize; j++) {
-      const v = data[base + j] || 0;
+    for (let j = 0; j < frameSize; j++) {
+      const v = data[start + j] || 0;
       sum += v * v;
     }
-    rmsArr[i] = Math.sqrt(sum / blockSize);
+    const rms = Math.sqrt(sum / frameSize);
+    const db = 20 * Math.log10(rms + 1e-9);
+    dbValues[i] = db;
+    frames[i] = {
+      time: start / sampleRate,
+      db,
+      amp: Math.min(1, Math.max(0, (db + 72) / 72))
+    };
   }
-  _waveRmsArr = rmsArr;
 
-  // Setup mouse events on wrap
-  const wrap = document.getElementById('waveform-wrap');
-  wrap.onmousemove = (e) => _waveHover(e);
-  wrap.onmouseleave = () => {
-    document.getElementById('waveform-playhead').style.display = 'none';
-    document.getElementById('waveform-tooltip').style.display = 'none';
-    document.getElementById('waveform-time').textContent = '—';
-  };
-
-  document.getElementById('waveform-container').classList.add('visible');
-  _drawWaveformFromCache();
-  _startPlayheadAnimation();
-}
-
-function _getWaveColors() {
-  const cs = getComputedStyle(document.documentElement);
-  return {
-    active:     cs.getPropertyValue('--color-primary').trim(),
-    silentCut:  cs.getPropertyValue('--color-surface-dynamic').trim(),
-    silentKeep: cs.getPropertyValue('--color-warning').trim(),
-    bg:         cs.getPropertyValue('--color-bg').trim(),
+  previewAnalysis = {
+    duration,
+    sampleRate,
+    frameSize,
+    hopSize,
+    frameDuration: hopSize / sampleRate,
+    frames,
+    dbValues
   };
 }
 
-function _computeSilenceMask(numBars) {
-  if (!_waveRmsArr) return null;
-  const threshold   = parseFloat(document.getElementById('threshold').value);
-  const minSilSec   = parseFloat(document.getElementById('min-silence').value);
-  const maxKeepSec  = parseFloat(document.getElementById('max-keep').value);
-  const smoothSec   = parseFloat(document.getElementById('smoothing').value);
-  const padBefore   = parseFloat(document.getElementById('pad-before').value);
-  const padAfter    = parseFloat(document.getElementById('pad-after').value);
-  const barDur      = _waveBufDur / numBars;
+function updatePreviewFromSliders() {
+  if (!audioBuffer || !previewAnalysis) return;
+  if (!document.getElementById('show-wave').checked) return;
 
-  // 1. raw silence mask
-  const silent = new Uint8Array(numBars);
-  for (let i = 0; i < numBars; i++) {
-    const db = 20 * Math.log10(_waveRmsArr[i] + 1e-9);
-    silent[i] = db < threshold ? 1 : 0;
-  }
+  waveformContainer.classList.add('visible');
 
-  // 2. smoothing — merge gaps smaller than smoothSec
-  const smoothBars = Math.max(1, Math.round(smoothSec / barDur));
-  const smoothed = new Uint8Array(silent);
-  // fill short loud gaps inside silence (smooth silence)
-  for (let i = 0; i < numBars; i++) {
-    if (!smoothed[i]) {
-      // check if surrounded by silence within smoothBars
-      let allSil = true;
-      for (let k = Math.max(0,i-smoothBars); k <= Math.min(numBars-1,i+smoothBars); k++) {
-        if (!silent[k]) { allSil = false; break; }
-      }
-      if (allSil) smoothed[i] = 1;
-    }
-  }
+  const threshold = parseFloat(document.getElementById('threshold').value);
+  const minSilence = parseFloat(document.getElementById('min-silence').value);
+  const padBefore = parseFloat(document.getElementById('pad-before').value);
+  const padAfter = parseFloat(document.getElementById('pad-after').value);
+  const maxKeep = parseFloat(document.getElementById('max-keep').value);
+  const smoothing = parseFloat(document.getElementById('smoothing').value);
 
-  // 3. pad loud regions: expand loud zones by padBefore/padAfter
-  const padBarsBefore = Math.round(padBefore / barDur);
-  const padBarsAfter  = Math.round(padAfter  / barDur);
-  const padded = new Uint8Array(smoothed);
-  for (let i = 0; i < numBars; i++) {
-    if (!smoothed[i]) { // loud bar
-      for (let k = Math.max(0, i - padBarsBefore); k <= Math.min(numBars-1, i + padBarsAfter); k++) {
-        padded[k] = 0; // mark as loud
-      }
-    }
-  }
+  previewSegments = computePreviewSegments({
+    frames: previewAnalysis.frames,
+    duration: previewAnalysis.duration,
+    frameDuration: previewAnalysis.frameDuration,
+    threshold,
+    minSilence,
+    padBefore,
+    padAfter,
+    maxKeep,
+    smoothing
+  });
 
-  // 4. classify silence runs: cut vs keep
-  // 0 = loud, 1 = silence-keep (short enough), 2 = silence-cut
-  const result = new Uint8Array(numBars); // 0=loud,1=keep,2=cut
-  let runStart = -1;
-  for (let i = 0; i <= numBars; i++) {
-    const isSil = i < numBars ? padded[i] === 1 : false;
-    if (isSil && runStart < 0) {
-      runStart = i;
-    } else if (!isSil && runStart >= 0) {
-      const runLenSec = (i - runStart) * barDur;
-      const type = runLenSec < minSilSec ? 1 : (runLenSec <= maxKeepSec ? 1 : 2);
-      for (let k = runStart; k < i; k++) result[k] = type;
-      runStart = -1;
-    }
-  }
-
-  return result;
+  renderInteractiveWaveform();
+  updateWaveformStats();
 }
 
-function _drawWaveformFromCache() {
-  if (!_waveRmsArr) return;
-  const canvas = document.getElementById('waveform-canvas');
-  const W = parseInt(canvas.style.width) || canvas.parentElement.clientWidth || 900;
-  const DPR = window.devicePixelRatio || 1;
-  const H = 120;
-  canvas.width = Math.round(W * DPR);
-  canvas.height = Math.round(H * DPR);
+function computePreviewSegments(opts) {
+  const {
+    frames, duration, frameDuration,
+    threshold, minSilence, padBefore, padAfter, maxKeep, smoothing
+  } = opts;
+
+  const loudFlags = frames.map(f => f.db >= threshold);
+  const smoothFrames = Math.max(0, Math.round(smoothing / frameDuration));
+  const smoothed = new Array(loudFlags.length).fill(false);
+
+  for (let i = 0; i < loudFlags.length; i++) {
+    const from = Math.max(0, i - smoothFrames);
+    const to = Math.min(loudFlags.length - 1, i + smoothFrames);
+    let loudCount = 0;
+    for (let k = from; k <= to; k++) loudCount += loudFlags[k] ? 1 : 0;
+    smoothed[i] = loudCount >= ((to - from + 1) / 2);
+  }
+
+  const rawLoudSegments = [];
+  let active = false;
+  let segStart = 0;
+
+  for (let i = 0; i < smoothed.length; i++) {
+    const t = i * frameDuration;
+    if (smoothed[i] && !active) {
+      active = true;
+      segStart = Math.max(0, t - padBefore);
+    } else if (!smoothed[i] && active) {
+      active = false;
+      const segEnd = Math.min(duration, t + padAfter);
+      if (segEnd - segStart > 0.03) rawLoudSegments.push({ start: segStart, end: segEnd });
+    }
+  }
+
+  if (active) {
+    rawLoudSegments.push({ start: segStart, end: duration });
+  }
+
+  const merged = [];
+  for (const seg of rawLoudSegments) {
+    if (!merged.length) {
+      merged.push({ ...seg });
+      continue;
+    }
+    const prev = merged[merged.length - 1];
+    const gap = seg.start - prev.end;
+    if (gap <= maxKeep || gap <= minSilence) {
+      prev.end = Math.max(prev.end, seg.end);
+    } else {
+      merged.push({ ...seg });
+    }
+  }
+
+  const timeline = [];
+  let cursor = 0;
+
+  for (let i = 0; i < merged.length; i++) {
+    const seg = merged[i];
+
+    if (seg.start > cursor) {
+      const gap = seg.start - cursor;
+      if (gap <= maxKeep) {
+        timeline.push({ start: cursor, end: seg.start, type: 'kept-silence' });
+      } else {
+        timeline.push({ start: cursor, end: seg.start, type: 'cut' });
+      }
+    }
+
+    timeline.push({ start: seg.start, end: seg.end, type: 'keep' });
+    cursor = seg.end;
+  }
+
+  if (cursor < duration) {
+    const tail = duration - cursor;
+    timeline.push({
+      start: cursor,
+      end: duration,
+      type: tail <= maxKeep ? 'kept-silence' : 'cut'
+    });
+  }
+
+  return timeline;
+}
+
+function getSegmentTypeAtTime(t) {
+  for (const seg of previewSegments) {
+    if (t >= seg.start && t <= seg.end) return seg.type;
+  }
+  return 'cut';
+}
+
+function renderInteractiveWaveform() {
+  const canvas = waveformCanvas;
+  const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  const W = Math.max(300, Math.floor(rect.width));
+  const H = 140;
+
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+
   const ctx = canvas.getContext('2d');
-  ctx.scale(DPR, DPR);
-
-  const numBars = _waveRmsArr.length;
-  const barW = W / numBars;
-  const maxRms = Math.max(..._waveRmsArr, 1e-9);
-  const colors = _getWaveColors();
-  const mask = _computeSilenceMask(numBars);
-
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, W, H);
 
-  // background
+  const cs = getComputedStyle(document.documentElement);
+  const colors = {
+    keep: cs.getPropertyValue('--color-primary').trim(),
+    cut: cs.getPropertyValue('--color-error').trim(),
+    keptSilence: cs.getPropertyValue('--color-warning').trim(),
+    grid: cs.getPropertyValue('--color-divider').trim(),
+    textFaint: cs.getPropertyValue('--color-text-faint').trim(),
+    textMuted: cs.getPropertyValue('--color-text-muted').trim(),
+    bg: cs.getPropertyValue('--color-bg').trim()
+  };
+
+  const midY = H / 2;
+  const duration = previewAnalysis.duration;
+  const bins = Math.max(180, Math.floor(W / 3));
+  const framesPerBin = Math.max(1, Math.floor(previewAnalysis.frames.length / bins));
+
   ctx.fillStyle = colors.bg;
   ctx.fillRect(0, 0, W, H);
 
-  // center line
-  ctx.strokeStyle = 'oklch(0.5 0 0 / 0.07)';
+  ctx.strokeStyle = colors.grid;
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.moveTo(0, H/2);
-  ctx.lineTo(W, H/2);
+  ctx.moveTo(0, midY);
+  ctx.lineTo(W, midY);
   ctx.stroke();
 
-  // bars
-  const gap = barW > 3 ? 0.5 : 0;
-  for (let i = 0; i < numBars; i++) {
-    const rms = _waveRmsArr[i];
-    const normalized = rms / maxRms;
-    // nonlinear scale for better visibility
-    const scaled = Math.pow(normalized, 0.5);
-    const barH = Math.max(2, scaled * (H * 0.88));
-    const x = i * barW + gap;
-    const bw = Math.max(1, barW - gap * 2);
-
-    let color;
-    if (!mask || mask[i] === 0) color = colors.active;
-    else if (mask[i] === 1) color = colors.silentKeep;
-    else color = colors.silentCut;
-
-    // alpha based on loudness
-    const alpha = mask && mask[i] !== 0 ? 0.55 : 0.85 + normalized * 0.15;
-    ctx.globalAlpha = alpha;
-    ctx.fillStyle = color;
-
-    // draw mirrored bar
+  for (let i = 0; i <= 4; i++) {
+    const x = (W / 4) * i;
+    ctx.strokeStyle = colors.grid;
     ctx.beginPath();
-    if (ctx.roundRect) {
-      ctx.roundRect(x, (H - barH) / 2, bw, barH, Math.min(2, bw/2));
-    } else {
-      ctx.rect(x, (H - barH) / 2, bw, barH);
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, H);
+    ctx.stroke();
+
+    const time = (duration / 4) * i;
+    ctx.fillStyle = colors.textMuted;
+    ctx.font = '11px JetBrains Mono, monospace';
+    ctx.fillText(formatTimePrecise(time), Math.min(x + 4, W - 42), H - 8);
+  }
+
+  for (let i = 0; i < bins; i++) {
+    const from = i * framesPerBin;
+    const to = Math.min(previewAnalysis.frames.length, from + framesPerBin);
+    let peak = 0;
+    let timeSum = 0;
+
+    for (let j = from; j < to; j++) {
+      peak = Math.max(peak, previewAnalysis.frames[j].amp);
+      timeSum += previewAnalysis.frames[j].time;
     }
-    ctx.fill();
+
+    const avgTime = timeSum / Math.max(1, to - from);
+    const type = getSegmentTypeAtTime(avgTime);
+    const barH = Math.max(2, peak * (H * 0.78));
+    const x = (i / bins) * W;
+    const y = midY - barH / 2;
+
+    ctx.fillStyle =
+      type === 'keep' ? colors.keep :
+      type === 'kept-silence' ? colors.keptSilence :
+      colors.cut;
+
+    ctx.fillRect(x, y, Math.max(1.5, W / bins - 1), barH);
   }
-  ctx.globalAlpha = 1;
 
-  // Update stats
-  _updateWaveStats(mask, numBars);
-}
-
-function _updateWaveStats(mask, numBars) {
-  if (!mask) return;
-  let soundBars = 0, keepBars = 0, cutBars = 0;
-  for (let i = 0; i < numBars; i++) {
-    if (mask[i] === 0) soundBars++;
-    else if (mask[i] === 1) keepBars++;
-    else cutBars++;
+  if (sourceVideo && !sourceVideo.paused && !Number.isNaN(sourceVideo.currentTime)) {
+    drawPlaybackMarker(ctx, W, H, sourceVideo.currentTime, duration, colors.textFaint);
   }
-  const total = numBars;
-  const soundPct = (soundBars / total * 100).toFixed(0);
-  const keepPct  = (keepBars  / total * 100).toFixed(0);
-  const cutPct   = (cutBars   / total * 100).toFixed(0);
-  const soundSec = (soundBars / total * _waveBufDur).toFixed(1);
-  const keepSec  = (keepBars  / total * _waveBufDur).toFixed(1);
-  const cutSec   = (cutBars   / total * _waveBufDur).toFixed(1);
 
-  document.getElementById('waveform-stats').innerHTML = `
-    <div class="waveform-stat">
-      <div class="waveform-stat-label">Звук</div>
-      <div class="waveform-stat-val sound">${soundPct}% · ${soundSec}с</div>
-    </div>
-    <div class="waveform-stat">
-      <div class="waveform-stat-label">Тишина (сохран.)</div>
-      <div class="waveform-stat-val keep">${keepPct}% · ${keepSec}с</div>
-    </div>
-    <div class="waveform-stat">
-      <div class="waveform-stat-label">Тишина (вырез.)</div>
-      <div class="waveform-stat-val cut">${cutPct}% · ${cutSec}с</div>
-    </div>
-  `;
+  if (hoverTime != null) {
+    drawPlaybackMarker(ctx, W, H, hoverTime, duration, colors.textMuted, true);
+  }
 }
 
-function _waveHover(e) {
-  const wrap = document.getElementById('waveform-wrap');
-  const rect = wrap.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const pct = Math.max(0, Math.min(1, x / rect.width));
-  const timeSec = pct * _waveBufDur;
-
-  // playhead
-  const ph = document.getElementById('waveform-playhead');
-  ph.style.display = 'block';
-  ph.style.left = (pct * 100) + '%';
-
-  // tooltip
-  const tt = document.getElementById('waveform-tooltip');
-  tt.style.display = 'block';
-  tt.style.left = (pct * 100) + '%';
-  const m = Math.floor(timeSec / 60);
-  const s = (timeSec % 60).toFixed(1);
-  tt.textContent = m > 0 ? `${m}:${String(Math.floor(timeSec%60)).padStart(2,'0')}.${s.split('.')[1]}` : `${s}с`;
-
-  // top display
-  document.getElementById('waveform-time').textContent =
-    m > 0 ? `${m}м ${String(Math.floor(timeSec%60)).padStart(2,'0')}с` : `${parseFloat(s).toFixed(1)}с`;
-
-  // highlight bar under cursor on overlay
-  _drawOverlayHighlight(pct);
-}
-
-function _drawOverlayHighlight(pct) {
-  const canvas = document.getElementById('waveform-overlay');
-  const wrap = document.getElementById('waveform-wrap');
-  const W = wrap.clientWidth;
-  const H = 120;
-  const DPR = window.devicePixelRatio || 1;
-  canvas.width = Math.round(W * DPR);
-  canvas.height = Math.round(H * DPR);
-  canvas.style.width = W + 'px';
-  canvas.style.height = H + 'px';
-
-  const ctx = canvas.getContext('2d');
-  ctx.scale(DPR, DPR);
-  ctx.clearRect(0, 0, W, H);
-
-  // vertical scan line
-  const x = pct * W;
-  const grad = ctx.createLinearGradient(x - 20, 0, x + 20, 0);
-  grad.addColorStop(0, 'rgba(255,255,255,0)');
-  grad.addColorStop(0.5, 'rgba(255,255,255,0.07)');
-  grad.addColorStop(1, 'rgba(255,255,255,0)');
-  ctx.fillStyle = grad;
-  ctx.fillRect(x - 20, 0, 40, H);
-
-  // thin line
-  ctx.strokeStyle = 'rgba(255,255,255,0.3)';
-  ctx.lineWidth = 1;
-  ctx.setLineDash([3, 3]);
+function drawPlaybackMarker(ctx, W, H, time, duration, color, dashed = false) {
+  const x = Math.max(0, Math.min(W, (time / duration) * W));
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.5;
+  if (dashed) ctx.setLineDash([4, 4]);
   ctx.beginPath();
   ctx.moveTo(x, 0);
   ctx.lineTo(x, H);
   ctx.stroke();
-  ctx.setLineDash([]);
+  ctx.restore();
 }
 
-function _startPlayheadAnimation() {
-  if (_waveAnimId) cancelAnimationFrame(_waveAnimId);
-  const video = document.getElementById('source-video');
-  let lastTime = -1;
+function updateWaveformStats() {
+  const duration = previewAnalysis.duration;
+  let keep = 0;
+  let cut = 0;
+  let segments = 0;
 
-  function tick() {
-    _waveAnimId = requestAnimationFrame(tick);
-    if (!video.src || video.paused) return;
-    const t = video.currentTime;
-    if (Math.abs(t - lastTime) < 0.05) return;
-    lastTime = t;
-    if (!_waveBufDur) return;
-    const pct = t / _waveBufDur;
-    const ph = document.getElementById('waveform-playhead');
-    if (ph) {
-      ph.style.display = 'block';
-      ph.style.left = (pct * 100) + '%';
+  for (const seg of previewSegments) {
+    const len = seg.end - seg.start;
+    if (seg.type === 'keep' || seg.type === 'kept-silence') keep += len;
+    if (seg.type === 'cut') cut += len;
+    if (seg.type === 'keep') segments++;
+  }
+
+  document.getElementById('stat-keep').textContent =
+    `${formatTimePrecise(keep)} · ${(keep / duration * 100).toFixed(1)}%`;
+
+  document.getElementById('stat-cut').textContent =
+    `${formatTimePrecise(cut)} · ${(cut / duration * 100).toFixed(1)}%`;
+
+  document.getElementById('stat-segments').textContent = String(segments);
+  document.getElementById('waveform-mini-stats').textContent =
+    `Локальный preview: ${segments} сегм. · останется ${formatTimePrecise(keep)} · вырежется ${formatTimePrecise(cut)}`;
+}
+
+function attachWaveformInteractions() {
+  if (waveformStage.dataset.bound === '1') return;
+  waveformStage.dataset.bound = '1';
+
+  waveformCanvas.addEventListener('mousemove', (e) => {
+    if (!previewAnalysis) return;
+    const rect = waveformCanvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const t = Math.max(0, Math.min(previewAnalysis.duration, (x / rect.width) * previewAnalysis.duration));
+    hoverTime = t;
+
+    const type = getSegmentTypeAtTime(t);
+    const label = type === 'keep'
+      ? 'Остается'
+      : type === 'kept-silence'
+      ? 'Короткая пауза'
+      : 'Будет вырезано';
+
+    waveformTooltip.hidden = false;
+    waveformTooltip.style.left = `${Math.min(rect.width - 110, Math.max(8, x + 10))}px`;
+    waveformTooltip.innerHTML = `${formatTimePrecise(t)} · ${label}`;
+    document.getElementById('stat-hover').textContent = `${formatTimePrecise(t)} · ${label}`;
+
+    renderInteractiveWaveform();
+  });
+
+  waveformCanvas.addEventListener('mouseleave', () => {
+    hoverTime = null;
+    waveformTooltip.hidden = true;
+    document.getElementById('stat-hover').textContent = '—';
+    renderInteractiveWaveform();
+  });
+
+  waveformCanvas.addEventListener('click', (e) => {
+    if (!previewAnalysis || !sourceVideo?.duration) return;
+    const rect = waveformCanvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const t = Math.max(0, Math.min(previewAnalysis.duration, (x / rect.width) * previewAnalysis.duration));
+    sourceVideo.currentTime = t;
+    renderInteractiveWaveform();
+  });
+}
+
+function startWaveformPlaybackMarker() {
+  cancelAnimationFrame(waveformRaf);
+
+  const tick = () => {
+    if (previewAnalysis && document.getElementById('show-wave').checked) {
+      renderInteractiveWaveform();
     }
-  }
-  tick();
+    waveformRaf = requestAnimationFrame(tick);
+  };
+
+  waveformRaf = requestAnimationFrame(tick);
 }
-
-// Handle theme changes — redraw
-const _themeObserver = new MutationObserver(() => {
-  if (_waveRmsArr && document.getElementById('show-wave').checked) {
-    _drawWaveformFromCache();
-  }
-});
-_themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
-
-// Handle resize
-window.addEventListener('resize', () => {
-  if (_waveRmsArr && document.getElementById('show-wave').checked) {
-    const canvas = document.getElementById('waveform-canvas');
-    const W = canvas.parentElement.clientWidth || 900;
-    canvas.style.width = W + 'px';
-    _drawWaveformFromCache();
-  }
-});
 
 
 // ============================
@@ -1684,6 +1730,20 @@ function showResult(blob, stats) {
 
 document.getElementById('btn-restart').addEventListener('click', clearFile);
 
+  
+function schedulePreviewRedraw() {
+  clearTimeout(redrawTimer);
+  redrawTimer = setTimeout(() => {
+    updatePreviewFromSliders();
+  }, 50);
+}
+
+['threshold', 'min-silence', 'pad-before', 'pad-after', 'max-keep', 'smoothing'].forEach(id => {
+  document.getElementById(id).addEventListener('input', schedulePreviewRedraw);
+});
+
+
+  
 // ============================
 // ACCORDION
 // ============================
@@ -1705,6 +1765,14 @@ function formatTime(sec) {
   const m = Math.floor(sec / 60);
   const s = Math.floor(sec % 60);
   return m > 0 ? `${m}м ${s.toString().padStart(2,'0')}с` : `${s}с`;
+}
+
+function formatTimePrecise(sec) {
+  if (!Number.isFinite(sec)) return '0.00с';
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  if (m > 0) return `${m}:${s.toFixed(2).padStart(5, '0')}`;
+  return `${s.toFixed(2)}с`;
 }
 </script>
 </body>
